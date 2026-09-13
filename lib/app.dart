@@ -5,6 +5,7 @@ import 'core/constants/app_config.dart';
 import 'core/di/injection.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_cubit.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/pickup/presentation/cubit/pickup_alert_cubit.dart';
 
@@ -17,13 +18,17 @@ class AttendanceApp extends StatelessWidget {
       providers: [
         BlocProvider<AuthCubit>.value(value: sl<AuthCubit>()),
         BlocProvider<PickupAlertCubit>.value(value: sl<PickupAlertCubit>()),
+        BlocProvider<ThemeCubit>.value(value: sl<ThemeCubit>()),
       ],
-      child: MaterialApp.router(
-        title: AppConfig.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        routerConfig: sl<AppRouter>().router,
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, mode) => MaterialApp.router(
+          title: AppConfig.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: mode,
+          routerConfig: sl<AppRouter>().router,
+        ),
       ),
     );
   }

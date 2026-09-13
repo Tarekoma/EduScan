@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 
+import '../attendance/domain/usecases/attendance_usecases.dart';
 import 'data/datasources/pickup_remote_data_source.dart';
 import 'data/pickup_alert_player.dart';
 import 'data/repositories/pickup_repository_impl.dart';
@@ -18,7 +19,9 @@ void registerPickupDependencies(GetIt sl) {
     ..registerLazySingleton(() => WatchActivePickupRequests(sl()))
     ..registerLazySingleton(() => WatchStudentPickup(sl()))
     ..registerLazySingleton(() => WatchPickupHistory(sl()))
-    ..registerLazySingleton(() => RequestPickup(sl()))
+    ..registerLazySingleton(
+      () => RequestPickup(sl(), sl<GetTodayRecord>()),
+    )
     ..registerLazySingleton(() => AcknowledgePickup(sl()))
     ..registerLazySingleton(() => CompletePickup(sl()))
     ..registerLazySingleton(() => CancelPickup(sl()))
@@ -26,6 +29,7 @@ void registerPickupDependencies(GetIt sl) {
       () => ParentPickupCubit(
         authCubit: sl(),
         watchStudentPickup: sl(),
+        watchTodayRecord: sl<WatchTodayRecord>(),
         requestPickup: sl(),
         cancelPickup: sl(),
       ),

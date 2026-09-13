@@ -1,4 +1,5 @@
 import 'package:attendance_management/core/enums/person_type.dart';
+import 'package:attendance_management/core/enums/worker_job_title.dart';
 import 'package:attendance_management/core/errors/app_exception.dart';
 import 'package:attendance_management/features/qr/domain/usecases/resolve_person.dart';
 import 'package:attendance_management/features/students/domain/entities/student.dart';
@@ -30,7 +31,7 @@ class _Workers implements WorkerRepository {
     return const Worker(
       workerId: 'WRK_00015',
       fullName: 'Mr Teacher',
-      job: 'Teacher',
+      jobTitle: WorkerJobTitle.teacher,
       qrCodeId: 'WRK_00015',
     );
   }

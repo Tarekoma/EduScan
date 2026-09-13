@@ -19,7 +19,7 @@ class CreateWorker {
   const CreateWorker(this._repo);
   final WorkerRepository _repo;
   Future<Worker> call(WorkerDraft draft) {
-    _validate(draft.fullName, draft.job, draft.phone);
+    _validate(draft.fullName);
     return _repo.createWorker(draft);
   }
 }
@@ -28,7 +28,7 @@ class UpdateWorker {
   const UpdateWorker(this._repo);
   final WorkerRepository _repo;
   Future<Worker> call(Worker worker) {
-    _validate(worker.fullName, worker.job, worker.phone);
+    _validate(worker.fullName);
     return _repo.updateWorker(worker);
   }
 }
@@ -39,10 +39,7 @@ class DeleteWorker {
   Future<void> call(String workerId) => _repo.deleteWorker(workerId);
 }
 
-void _validate(String fullName, String job, String? phone) {
-  final error =
-      Validators.required(fullName, field: 'Full name') ??
-      Validators.required(job, field: 'Job') ??
-      (phone == null || phone.trim().isEmpty ? null : Validators.phone(phone));
+void _validate(String fullName) {
+  final error = Validators.required(fullName, field: 'Full name');
   if (error != null) throw ValidationException(error);
 }

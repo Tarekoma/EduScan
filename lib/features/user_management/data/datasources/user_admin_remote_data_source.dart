@@ -26,6 +26,9 @@ class UserAdminRemoteDataSource {
   CollectionReference<Map<String, dynamic>> get _users =>
       _firestore.collection(FirestoreCollections.users);
 
+  CollectionReference<Map<String, dynamic>> get _students =>
+      _firestore.collection(FirestoreCollections.students);
+
   Stream<List<AppUser>> watchByRole(UserRole role) {
     return _users
         .where(UserFields.role, isEqualTo: role.value)
@@ -57,7 +60,8 @@ class UserAdminRemoteDataSource {
       displayName: name,
     );
     try {
-      await _users.doc(uid).set({
+      final batch = _firestore.batch();
+      batch.set(_users.doc(uid), {
         UserFields.uid: uid,
         UserFields.name: name,
         UserFields.email: email,
@@ -68,6 +72,15 @@ class UserAdminRemoteDataSource {
         UserFields.createdAt: FieldValue.serverTimestamp(),
         UserFields.createdBy: _managerUid,
       });
+      // Stamp the back-reference so these students no longer show as
+      // "unlinked" when picking children for another parent.
+      for (final id in studentIds) {
+        batch.update(_students.doc(id), {
+          StudentFields.parentId: uid,
+          StudentFields.updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
     } catch (e, s) {
       throw ErrorMapper.map(e, s);
     }
@@ -120,20 +133,60 @@ class UserAdminRemoteDataSource {
       if (!snap.exists || snap.data()?[UserFields.role] != UserRole.parent.value) {
         throw const NotFoundException('No such parent account.');
       }
-      await _users.doc(uid).update({
+      // Reconcile against the students' own back-reference — not the
+      // parent's stored studentIds — so this also self-heals any link that
+      // predates the back-reference existing (just re-saving fixes it).
+      final linked = await _students
+          .where(StudentFields.parentId, isEqualTo: uid)
+          .get();
+      final previousIds = linked.docs.map((d) => d.id).toSet();
+      final newIds = studentIds.toSet();
+
+      final batch = _firestore.batch();
+      batch.update(_users.doc(uid), {
         UserFields.studentIds: studentIds,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      // Keep the students' back-reference in sync: stamp newly-linked ones,
+      // clear it from any that were unlinked so they become available again.
+      for (final id in newIds.difference(previousIds)) {
+        batch.update(_students.doc(id), {
+          StudentFields.parentId: uid,
+          StudentFields.updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+      for (final id in previousIds.difference(newIds)) {
+        batch.update(_students.doc(id), {
+          StudentFields.parentId: FieldValue.delete(),
+          StudentFields.updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
     } catch (e, s) {
       throw ErrorMapper.map(e, s);
     }
   }
 
   /// Removes the `users/{uid}` profile. The Auth record is orphaned (a client
-  /// cannot delete another user); a manager clears it from the console.
+  /// cannot delete another user); a manager clears it from the console. For a
+  /// parent, also clears the back-reference on their linked students so those
+  /// children aren't left permanently marked as linked to a deleted account.
   Future<void> deleteUser({required String uid, required UserRole role}) async {
     try {
-      await _users.doc(uid).delete();
+      final batch = _firestore.batch();
+      if (role == UserRole.parent) {
+        final linked = await _students
+            .where(StudentFields.parentId, isEqualTo: uid)
+            .get();
+        for (final doc in linked.docs) {
+          batch.update(doc.reference, {
+            StudentFields.parentId: FieldValue.delete(),
+            StudentFields.updatedAt: FieldValue.serverTimestamp(),
+          });
+        }
+      }
+      batch.delete(_users.doc(uid));
+      await batch.commit();
     } catch (e, s) {
       throw ErrorMapper.map(e, s);
     }
@@ -143,12 +196,7 @@ class UserAdminRemoteDataSource {
     final ids = studentIds.toSet();
     if (ids.isEmpty) return;
     try {
-      final snaps = await Future.wait(
-        ids.map(
-          (id) =>
-              _firestore.collection(FirestoreCollections.students).doc(id).get(),
-        ),
-      );
+      final snaps = await Future.wait(ids.map((id) => _students.doc(id).get()));
       final missing = snaps.where((s) => !s.exists).map((s) => s.id).toList();
       if (missing.isNotEmpty) {
         throw ValidationException('Unknown student(s): ${missing.join(', ')}');

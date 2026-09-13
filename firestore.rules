@@ -51,6 +51,15 @@ service cloud.firestore {
       return v is string && v.size() > 0;
     }
 
+    // Rule 4: an attendance record may only be written for a real,
+    // already-registered student/worker — never trust a personId supplied by
+    // the client without this check.
+    function personExists(personType, personId) {
+      return personType == 'student'
+        ? exists(/databases/$(database)/documents/students/$(personId))
+        : exists(/databases/$(database)/documents/workers/$(personId));
+    }
+
     // Fields that must not change between the stored and incoming document.
     function unchanged(keys) {
       return request.resource.data.diff(resource.data).affectedKeys()
@@ -110,12 +119,12 @@ service cloud.firestore {
         && request.resource.data.workerId == workerId
         && request.resource.data.qrCodeId == workerId
         && isNonEmptyString(request.resource.data.fullName)
-        && isNonEmptyString(request.resource.data.job);
+        && request.resource.data.jobTitle in ['teacher', 'administrative_staff', 'other'];
 
       allow update: if hasRole('manager')
         && unchanged(['workerId', 'qrCodeId', 'createdAt'])
         && isNonEmptyString(request.resource.data.fullName)
-        && isNonEmptyString(request.resource.data.job);
+        && request.resource.data.jobTitle in ['teacher', 'administrative_staff', 'other'];
 
       allow delete: if hasRole('manager');
     }
@@ -134,7 +143,8 @@ service cloud.firestore {
       allow create: if (hasRole('security') || hasRole('manager'))
         && request.resource.data.personType in ['student', 'worker']
         && request.resource.data.date is string
-        && request.resource.data.personId is string;
+        && request.resource.data.personId is string
+        && personExists(request.resource.data.personType, request.resource.data.personId);
 
       allow update: if (hasRole('security') || hasRole('manager'))
         && unchanged(['personId', 'personType', 'date',

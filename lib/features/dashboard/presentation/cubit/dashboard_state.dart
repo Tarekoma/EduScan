@@ -2,6 +2,8 @@ part of 'dashboard_cubit.dart';
 
 enum DashboardStatus { initial, loading, ready, error }
 
+enum DashboardReportStatus { initial, loading, ready, error }
+
 /// One row in the recent-activity list, with names already resolved.
 class ActivityItem extends Equatable {
   const ActivityItem({
@@ -36,6 +38,8 @@ class ActivityItem extends Equatable {
 class DashboardState extends Equatable {
   DashboardState({
     required this.date,
+    required this.reportFrom,
+    required this.reportTo,
     this.status = DashboardStatus.initial,
     this.students = const [],
     this.workers = const [],
@@ -44,6 +48,9 @@ class DashboardState extends Equatable {
     this.typeFilter,
     this.attendanceLoading = false,
     this.errorMessage,
+    this.reportRecords = const [],
+    this.reportStatus = DashboardReportStatus.initial,
+    this.reportErrorMessage,
   });
 
   final DateTime date;
@@ -56,6 +63,15 @@ class DashboardState extends Equatable {
   final bool attendanceLoading;
   final String? errorMessage;
 
+  /// Date range + one-shot fetch backing the report section (rate-over-time
+  /// chart, class comparison, detailed table). Independent from [date]/[records]
+  /// above, which drive the live single-day "recent activity" feed.
+  final DateTime reportFrom;
+  final DateTime reportTo;
+  final List<AttendanceRecord> reportRecords;
+  final DashboardReportStatus reportStatus;
+  final String? reportErrorMessage;
+
   DashboardStats get stats => DashboardStats.compute(
     totalStudents: students.length,
     totalWorkers: workers.length,
@@ -65,6 +81,14 @@ class DashboardState extends Equatable {
 
   List<CheckInPoint> get chart =>
       DashboardChart.cumulativeCheckIns(records, typeFilter: typeFilter);
+
+  AttendanceReportStats get report => AttendanceReportStats.compute(
+    students: students,
+    studentRecords: reportRecords
+        .where((r) => r.personType == PersonType.student)
+        .toList(),
+    dateKeys: AttendanceReportStats.dateKeysInRange(reportFrom, reportTo),
+  );
 
   late final Map<String, String> _personNames = {
     for (final s in students) s.studentId: s.fullName,
@@ -112,6 +136,11 @@ class DashboardState extends Equatable {
     bool clearTypeFilter = false,
     bool? attendanceLoading,
     String? errorMessage,
+    DateTime? reportFrom,
+    DateTime? reportTo,
+    List<AttendanceRecord>? reportRecords,
+    DashboardReportStatus? reportStatus,
+    String? reportErrorMessage,
   }) {
     return DashboardState(
       date: date ?? this.date,
@@ -123,6 +152,11 @@ class DashboardState extends Equatable {
       typeFilter: clearTypeFilter ? null : (typeFilter ?? this.typeFilter),
       attendanceLoading: attendanceLoading ?? this.attendanceLoading,
       errorMessage: errorMessage ?? this.errorMessage,
+      reportFrom: reportFrom ?? this.reportFrom,
+      reportTo: reportTo ?? this.reportTo,
+      reportRecords: reportRecords ?? this.reportRecords,
+      reportStatus: reportStatus ?? this.reportStatus,
+      reportErrorMessage: reportErrorMessage ?? this.reportErrorMessage,
     );
   }
 
@@ -137,5 +171,10 @@ class DashboardState extends Equatable {
     typeFilter,
     attendanceLoading,
     errorMessage,
+    reportFrom,
+    reportTo,
+    reportRecords,
+    reportStatus,
+    reportErrorMessage,
   ];
 }

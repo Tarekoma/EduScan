@@ -63,7 +63,17 @@ class _MultiSelectViewState extends State<_MultiSelectView> {
               if (state.all.isEmpty) {
                 return const EmptyView(message: 'No students to link.');
               }
-              final students = state.filtered;
+              // Only offer children with no parent yet — a student already
+              // linked elsewhere isn't up for grabs here. The exception is
+              // this parent's own already-linked children (in `initial`), so
+              // editing an existing parent's links still shows them.
+              final students = state.filtered
+                  .where(
+                    (s) =>
+                        s.parentId == null ||
+                        widget.initial.contains(s.studentId),
+                  )
+                  .toList();
               return Column(
                 children: [
                   AppSearchBar(
@@ -71,26 +81,32 @@ class _MultiSelectViewState extends State<_MultiSelectView> {
                     onChanged: context.read<StudentsCubit>().search,
                   ),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: students.length,
-                      itemBuilder: (context, i) {
-                        final s = students[i];
-                        return CheckboxListTile(
-                          value: _selected.contains(s.studentId),
-                          title: Text(s.fullName),
-                          subtitle: Text(
-                            '${s.studentId} • Class ${s.className}',
+                    child: students.isEmpty
+                        ? EmptyView(
+                            message: state.query.isEmpty
+                                ? 'All students are already linked to a parent.'
+                                : 'No unlinked students match your search.',
+                          )
+                        : ListView.builder(
+                            itemCount: students.length,
+                            itemBuilder: (context, i) {
+                              final s = students[i];
+                              return CheckboxListTile(
+                                value: _selected.contains(s.studentId),
+                                title: Text(s.fullName),
+                                subtitle: Text(
+                                  '${s.studentId} • Class ${s.className}',
+                                ),
+                                onChanged: (checked) => setState(() {
+                                  if (checked ?? false) {
+                                    _selected.add(s.studentId);
+                                  } else {
+                                    _selected.remove(s.studentId);
+                                  }
+                                }),
+                              );
+                            },
                           ),
-                          onChanged: (checked) => setState(() {
-                            if (checked ?? false) {
-                              _selected.add(s.studentId);
-                            } else {
-                              _selected.remove(s.studentId);
-                            }
-                          }),
-                        );
-                      },
-                    ),
                   ),
                 ],
               );

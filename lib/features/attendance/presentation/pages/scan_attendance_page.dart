@@ -135,22 +135,28 @@ class _ResultBar extends StatelessWidget {
         }(),
       ),
     };
-    return Container(
-      width: double.infinity,
+    return ColoredBox(
       color: bg,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(text, style: TextStyle(color: fg)),
+      // Only the bottom inset needs protecting here — the AppBar above
+      // already keeps this page clear of the top status bar.
+      child: SafeArea(
+        top: false,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              Expanded(child: Text(text, style: TextStyle(color: fg))),
+              if (state.status == RecordStatus.success ||
+                  state.status == RecordStatus.failure)
+                TextButton(
+                  onPressed: () =>
+                      context.read<RecordAttendanceCubit>().reset(),
+                  child: const Text('Next'),
+                ),
+            ],
           ),
-          if (state.status == RecordStatus.success ||
-              state.status == RecordStatus.failure)
-            TextButton(
-              onPressed: () => context.read<RecordAttendanceCubit>().reset(),
-              child: const Text('Next'),
-            ),
-        ],
+        ),
       ),
     );
   }

@@ -1,9 +1,11 @@
 import 'package:get_it/get_it.dart';
 
+import '../attendance/domain/usecases/attendance_usecases.dart';
 import 'data/datasources/worker_remote_data_source.dart';
 import 'data/repositories/worker_repository_impl.dart';
 import 'domain/repositories/worker_repository.dart';
 import 'domain/usecases/worker_usecases.dart';
+import 'presentation/cubit/worker_attendance_history_cubit.dart';
 import 'presentation/cubit/workers_cubit.dart';
 
 void registerWorkerDependencies(GetIt sl) {
@@ -23,6 +25,11 @@ void registerWorkerDependencies(GetIt sl) {
         createWorker: sl(),
         updateWorker: sl(),
         deleteWorker: sl(),
+      ),
+    )
+    ..registerFactory(
+      () => WorkerAttendanceHistoryCubit(
+        watchPersonAttendance: sl<WatchPersonAttendance>(),
       ),
     );
 }

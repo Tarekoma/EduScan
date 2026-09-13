@@ -8,12 +8,14 @@ class PrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.icon,
+    this.trailingIcon,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final IconData? icon;
+  final IconData? trailingIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,10 @@ class PrimaryButton extends StatelessWidget {
                   const SizedBox(width: 8),
                 ],
                 Text(label),
+                if (trailingIcon != null) ...[
+                  const SizedBox(width: 8),
+                  Icon(trailingIcon, size: 18),
+                ],
               ],
             ),
     );

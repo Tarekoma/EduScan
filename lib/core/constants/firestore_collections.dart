@@ -26,9 +26,7 @@ abstract final class StudentFields {
 abstract final class WorkerFields {
   static const String workerId = 'workerId';
   static const String fullName = 'fullName';
-  static const String job = 'job';
-  static const String department = 'department';
-  static const String phone = 'phone';
+  static const String jobTitle = 'jobTitle';
   static const String qrCodeId = 'qrCodeId';
   static const String createdAt = 'createdAt';
   static const String updatedAt = 'updatedAt';

@@ -51,6 +51,10 @@ class StudentsCubit extends Cubit<StudentsState> {
 
   void search(String query) => emit(state.copyWith(query: query));
 
+  void filterByClass(String? className) => emit(
+    state.copyWith(classFilter: className, clearClassFilter: className == null),
+  );
+
   Future<bool> create(StudentDraft draft) =>
       _mutate(() => _createStudent(draft));
 

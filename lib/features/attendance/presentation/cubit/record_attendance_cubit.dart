@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/enums/person_type.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_mapper.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -15,8 +14,9 @@ import '../../domain/usecases/attendance_usecases.dart';
 part 'record_attendance_state.dart';
 
 /// Drives a single check-in / check-out submission for the security user.
-/// Person resolution (QR/search) happens upstream and hands this cubit a
-/// [personId] + [personType].
+/// Both entry points (manual id, QR scan) resolve the person against
+/// Firestore before writing anything — Rule 4: an attendance record may only
+/// exist for a real student/worker.
 class RecordAttendanceCubit extends Cubit<RecordAttendanceState> {
   RecordAttendanceCubit({
     required AuthCubit authCubit,
@@ -43,11 +43,14 @@ class RecordAttendanceCubit extends Cubit<RecordAttendanceState> {
     return AttendanceActor(uid: user.uid, canRecord: user.canRecordAttendance);
   }
 
-  /// Records attendance. When [action] is null the correct action is derived
-  /// from the person's current day state (scan-and-toggle).
+  /// Records attendance for a manually-typed id. [personId] is resolved
+  /// against the students/workers collections first (Rule 4) — the same
+  /// check the QR flow does — so a well-formatted but non-existent id (or one
+  /// that's since been deleted) is rejected instead of silently creating an
+  /// attendance record for nobody. When [action] is null the correct action
+  /// is derived from the person's current day state (scan-and-toggle).
   Future<void> submit({
     required String personId,
-    required PersonType personType,
     AttendanceAction? action,
   }) async {
     final actor = _actor();
@@ -58,30 +61,8 @@ class RecordAttendanceCubit extends Cubit<RecordAttendanceState> {
 
     emit(const RecordAttendanceState(status: RecordStatus.submitting));
     try {
-      final current = await _getTodayRecord(
-        personId: personId,
-        personType: personType,
-      );
-      final effective = action ?? AttendanceRules.nextAction(current);
-      final record = switch (effective) {
-        AttendanceAction.checkIn => await _checkIn(
-          personId: personId,
-          personType: personType,
-          actor: actor,
-        ),
-        AttendanceAction.checkOut => await _checkOut(
-          personId: personId,
-          personType: personType,
-          actor: actor,
-        ),
-      };
-      emit(
-        RecordAttendanceState(
-          status: RecordStatus.success,
-          record: record,
-          action: effective,
-        ),
-      );
+      final person = await _resolvePerson(personId);
+      await _recordFor(person: person, actor: actor, action: action);
     } on AppException catch (e) {
       emit(state.failure(e.message));
     } catch (e, s) {
@@ -101,19 +82,54 @@ class RecordAttendanceCubit extends Cubit<RecordAttendanceState> {
     if (scanKey != null && scanKey == _lastScanKey) return;
     _lastScanKey = scanKey;
 
+    final actor = _actor();
+    if (actor == null || !actor.canRecord) {
+      emit(state.failure('Only security may record attendance.'));
+      return;
+    }
+
     emit(const RecordAttendanceState(status: RecordStatus.submitting));
     try {
-      final ResolvedPerson person = await _resolvePerson(rawPayload);
-      await submit(
-        personId: person.personId,
-        personType: person.personType,
-        action: action,
-      );
+      final person = await _resolvePerson(rawPayload);
+      await _recordFor(person: person, actor: actor, action: action);
     } on AppException catch (e) {
       emit(state.failure(e.message));
     } catch (e, s) {
       emit(state.failure(ErrorMapper.map(e, s).message));
     }
+  }
+
+  /// Shared by [submit] and [submitScanned] once the person is known to
+  /// exist: checks today's state (Rules 1–3) and applies the check-in/out.
+  Future<void> _recordFor({
+    required ResolvedPerson person,
+    required AttendanceActor actor,
+    AttendanceAction? action,
+  }) async {
+    final current = await _getTodayRecord(
+      personId: person.personId,
+      personType: person.personType,
+    );
+    final effective = action ?? AttendanceRules.nextAction(current);
+    final record = switch (effective) {
+      AttendanceAction.checkIn => await _checkIn(
+        personId: person.personId,
+        personType: person.personType,
+        actor: actor,
+      ),
+      AttendanceAction.checkOut => await _checkOut(
+        personId: person.personId,
+        personType: person.personType,
+        actor: actor,
+      ),
+    };
+    emit(
+      RecordAttendanceState(
+        status: RecordStatus.success,
+        record: record,
+        action: effective,
+      ),
+    );
   }
 
   String? _lastScanKey;

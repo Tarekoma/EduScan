@@ -1,16 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/firestore_collections.dart';
+import '../../../../core/enums/worker_job_title.dart';
 import '../../domain/entities/worker.dart';
 
 class WorkerModel extends Worker {
   const WorkerModel({
     required super.workerId,
     required super.fullName,
-    required super.job,
+    required super.jobTitle,
     required super.qrCodeId,
-    super.department,
-    super.phone,
     super.createdAt,
     super.updatedAt,
   });
@@ -20,10 +19,10 @@ class WorkerModel extends Worker {
     return WorkerModel(
       workerId: doc.id,
       fullName: (data[WorkerFields.fullName] as String?) ?? '',
-      job: (data[WorkerFields.job] as String?) ?? '',
+      jobTitle: WorkerJobTitle.fromValue(
+        data[WorkerFields.jobTitle] as String?,
+      ),
       qrCodeId: (data[WorkerFields.qrCodeId] as String?) ?? doc.id,
-      department: data[WorkerFields.department] as String?,
-      phone: data[WorkerFields.phone] as String?,
       createdAt: (data[WorkerFields.createdAt] as Timestamp?)?.toDate(),
       updatedAt: (data[WorkerFields.updatedAt] as Timestamp?)?.toDate(),
     );
@@ -32,19 +31,13 @@ class WorkerModel extends Worker {
   static Map<String, dynamic> newData({
     required String workerId,
     required String fullName,
-    required String job,
-    String? department,
-    String? phone,
+    required WorkerJobTitle jobTitle,
   }) {
     return {
       WorkerFields.workerId: workerId,
       WorkerFields.fullName: fullName.trim(),
-      WorkerFields.job: job.trim(),
+      WorkerFields.jobTitle: jobTitle.value,
       WorkerFields.qrCodeId: workerId,
-      if (department != null && department.trim().isNotEmpty)
-        WorkerFields.department: department.trim(),
-      if (phone != null && phone.trim().isNotEmpty)
-        WorkerFields.phone: phone.trim(),
       WorkerFields.createdAt: FieldValue.serverTimestamp(),
       WorkerFields.updatedAt: FieldValue.serverTimestamp(),
     };
@@ -53,9 +46,7 @@ class WorkerModel extends Worker {
   static Map<String, dynamic> updateData(Worker worker) {
     return {
       WorkerFields.fullName: worker.fullName.trim(),
-      WorkerFields.job: worker.job.trim(),
-      WorkerFields.department: worker.department?.trim(),
-      WorkerFields.phone: worker.phone?.trim(),
+      WorkerFields.jobTitle: worker.jobTitle.value,
       WorkerFields.updatedAt: FieldValue.serverTimestamp(),
     };
   }

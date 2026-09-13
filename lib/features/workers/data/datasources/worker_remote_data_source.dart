@@ -57,9 +57,7 @@ class WorkerRemoteDataSource {
           WorkerModel.newData(
             workerId: id,
             fullName: draft.fullName,
-            job: draft.job,
-            department: draft.department,
-            phone: draft.phone,
+            jobTitle: draft.jobTitle,
           ),
         );
         return id;

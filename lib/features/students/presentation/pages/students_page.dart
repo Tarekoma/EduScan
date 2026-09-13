@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/app_search_bar.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
+import '../../../../core/widgets/page_header.dart';
+import '../../../../core/widgets/sign_out_button.dart';
+import '../../../../core/widgets/theme_toggle_button.dart';
 import '../../../qr/presentation/pages/person_qr_page.dart';
+import '../../domain/entities/student.dart';
 import '../cubit/students_cubit.dart';
+import 'student_attendance_details_page.dart';
 import 'student_form_page.dart';
 
 /// Students list. [readOnly] hides all mutation actions (supervisor view).
@@ -32,7 +39,21 @@ class _StudentsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Students')),
+      appBar: AppBar(
+        toolbarHeight: 76,
+        title: PageHeader(
+          title: 'Students',
+          subtitle: readOnly
+              ? 'View student records and QR codes'
+              : 'Manage student records and QR codes',
+        ),
+        actions: [
+          if (context.isMobile) ...[
+            const ThemeToggleButton(),
+            const SignOutButton(),
+          ],
+        ],
+      ),
       floatingActionButton: readOnly
           ? null
           : FloatingActionButton.extended(
@@ -49,14 +70,22 @@ class _StudentsView extends StatelessWidget {
             ..showSnackBar(SnackBar(content: Text(state.actionError!)));
         },
         builder: (context, state) {
-          return Column(
-            children: [
-              AppSearchBar(
-                hintText: 'Search by name, ID, class or QR',
-                onChanged: context.read<StudentsCubit>().search,
-              ),
-              Expanded(child: _buildList(context, state)),
-            ],
+          return Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (state.all.isNotEmpty)
+                  Text(
+                    '${state.all.length} student${state.all.length == 1 ? '' : 's'}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                const SizedBox(height: AppSpacing.sm),
+                _FilterRow(state: state),
+                const SizedBox(height: AppSpacing.md),
+                Expanded(child: _buildList(context, state)),
+              ],
+            ),
           );
         },
       ),
@@ -81,55 +110,47 @@ class _StudentsView extends StatelessWidget {
         if (students.isEmpty) {
           return const EmptyView(message: 'No students match your search.');
         }
-        return ListView.builder(
-          itemCount: students.length,
-          itemBuilder: (context, i) {
-            final s = students[i];
-            return ListTile(
-              leading: CircleAvatar(child: Text(s.className)),
-              title: Text(s.fullName),
-              subtitle: Text('${s.studentId} • Class ${s.className}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: 'Show QR',
-                    icon: const Icon(Icons.qr_code_2),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => PersonQrPage(
-                          value: s.qrCodeId,
-                          title: s.fullName,
-                          subtitle: '${s.studentId} • Class ${s.className}',
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (!readOnly)
-                    PopupMenuButton<String>(
-                      onSelected: (v) {
-                        if (v == 'edit') {
-                          _openForm(context, existingId: s.studentId);
-                        }
-                        if (v == 'delete') {
-                          _confirmDelete(context, s.studentId, s.fullName);
-                        }
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        PopupMenuItem(value: 'delete', child: Text('Delete')),
-                      ],
-                    ),
-                ],
-              ),
-              onTap: readOnly
-                  ? null
-                  : () => _openForm(context, existingId: s.studentId),
-            );
-          },
-        );
+        return context.isMobile
+            ? ListView.separated(
+                itemCount: students.length,
+                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (context, i) => _StudentCard(
+                  student: students[i],
+                  readOnly: readOnly,
+                  onTap: () => _openDetails(context, students[i]),
+                  onShowQr: () => _showQr(context, students[i]),
+                  onEdit: () => _openForm(context, existingId: students[i].studentId),
+                  onDelete: () =>
+                      _confirmDelete(context, students[i].studentId, students[i].fullName),
+                ),
+              )
+            : _StudentsTable(
+                students: students,
+                readOnly: readOnly,
+                onTap: (s) => _openDetails(context, s),
+                onShowQr: (s) => _showQr(context, s),
+                onEdit: (s) => _openForm(context, existingId: s.studentId),
+                onDelete: (s) => _confirmDelete(context, s.studentId, s.fullName),
+              );
     }
   }
+
+  void _openDetails(BuildContext context, Student student) =>
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => StudentAttendanceDetailsPage(student: student),
+        ),
+      );
+
+  void _showQr(BuildContext context, Student student) => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => PersonQrPage(
+        value: student.qrCodeId,
+        title: student.fullName,
+        subtitle: '${student.studentId} • Class ${student.className}',
+      ),
+    ),
+  );
 
   Future<void> _openForm(BuildContext context, {String? existingId}) {
     final cubit = context.read<StudentsCubit>();
@@ -158,5 +179,200 @@ class _StudentsView extends StatelessWidget {
     if (ok && context.mounted) {
       await context.read<StudentsCubit>().delete(id);
     }
+  }
+}
+
+class _FilterRow extends StatelessWidget {
+  const _FilterRow({required this.state});
+
+  final StudentsState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<StudentsCubit>();
+    return Row(
+      children: [
+        Expanded(
+          child: AppSearchBar(
+            hintText: 'Search by name, ID or class',
+            onChanged: cubit.search,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        DropdownMenu<String?>(
+          initialSelection: state.classFilter,
+          hintText: 'All classes',
+          onSelected: cubit.filterByClass,
+          dropdownMenuEntries: [
+            const DropdownMenuEntry(value: null, label: 'All classes'),
+            for (final c in state.classNames) DropdownMenuEntry(value: c, label: c),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StudentCard extends StatelessWidget {
+  const _StudentCard({
+    required this.student,
+    required this.readOnly,
+    required this.onTap,
+    required this.onShowQr,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Student student;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final VoidCallback onShowQr;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        onTap: onTap,
+        leading: CircleAvatar(child: Text(student.className)),
+        title: Text(student.fullName),
+        subtitle: Text('${student.studentId} • Class ${student.className}'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: 'Show QR',
+              icon: const Icon(Icons.qr_code_2),
+              onPressed: onShowQr,
+            ),
+            if (!readOnly)
+              PopupMenuButton<String>(
+                onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StudentsTable extends StatelessWidget {
+  const _StudentsTable({
+    required this.students,
+    required this.readOnly,
+    required this.onTap,
+    required this.onShowQr,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final List<Student> students;
+  final bool readOnly;
+  final ValueChanged<Student> onTap;
+  final ValueChanged<Student> onShowQr;
+  final ValueChanged<Student> onEdit;
+  final ValueChanged<Student> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final headerStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+      color: scheme.onSurfaceVariant,
+      fontWeight: FontWeight.w600,
+    );
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Expanded(flex: 3, child: Text('STUDENT', style: headerStyle)),
+                Expanded(flex: 2, child: Text('STUDENT ID', style: headerStyle)),
+                Expanded(flex: 2, child: Text('CLASS', style: headerStyle)),
+                const SizedBox(width: 96),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: ListView.separated(
+              itemCount: students.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, i) {
+                final s = students[i];
+                return InkWell(
+                  onTap: () => onTap(s),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                child: Text(
+                                  s.className.isNotEmpty ? s.className[0] : '?',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Text(
+                                  s.fullName,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(flex: 2, child: Text(s.studentId)),
+                        Expanded(flex: 2, child: Text(s.className)),
+                        SizedBox(
+                          width: 96,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                tooltip: 'Show QR',
+                                icon: const Icon(Icons.qr_code_2),
+                                onPressed: () => onShowQr(s),
+                              ),
+                              if (!readOnly)
+                                PopupMenuButton<String>(
+                                  onSelected: (v) =>
+                                      v == 'edit' ? onEdit(s) : onDelete(s),
+                                  itemBuilder: (_) => const [
+                                    PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                    PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -3,8 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/enums/user_role.dart';
+import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
+import '../../../../core/widgets/page_header.dart';
+import '../../../../core/widgets/sign_out_button.dart';
+import '../../../../core/widgets/theme_toggle_button.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../cubit/user_management_cubit.dart';
 import 'create_internal_page.dart';
@@ -21,7 +25,17 @@ class UsersPage extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Users'),
+          toolbarHeight: 76,
+          title: const PageHeader(
+            title: 'Users',
+            subtitle: 'Manage parent and staff accounts',
+          ),
+          actions: [
+            if (context.isMobile) ...[
+              const ThemeToggleButton(),
+              const SignOutButton(),
+            ],
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Parents'),

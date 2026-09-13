@@ -7,6 +7,7 @@ class StudentsState extends Equatable {
     this.status = StudentsStatus.initial,
     this.all = const [],
     this.query = '',
+    this.classFilter,
     this.errorMessage,
     this.isMutating = false,
     this.actionError,
@@ -15,15 +16,26 @@ class StudentsState extends Equatable {
   final StudentsStatus status;
   final List<Student> all;
   final String query;
+  final String? classFilter;
   final String? errorMessage;
   final bool isMutating;
   final String? actionError;
 
-  /// Students matching the current search query (id, name, class or QR id).
+  /// Distinct class names actually present in the roster, for the class
+  /// filter dropdown — never a hardcoded list.
+  List<String> get classNames =>
+      all.map((s) => s.className).toSet().toList()..sort();
+
+  /// Students matching the current search query (id, name, class or QR id)
+  /// and the selected class filter, if any.
   List<Student> get filtered {
-    if (query.isEmpty) return all;
+    var result = all;
+    if (classFilter != null) {
+      result = result.where((s) => s.className == classFilter).toList();
+    }
+    if (query.isEmpty) return result;
     final q = query.toLowerCase();
-    return all.where((s) {
+    return result.where((s) {
       return s.studentId.toLowerCase().contains(q) ||
           s.fullName.toLowerCase().contains(q) ||
           s.className.toLowerCase().contains(q) ||
@@ -37,6 +49,8 @@ class StudentsState extends Equatable {
     StudentsStatus? status,
     List<Student>? all,
     String? query,
+    String? classFilter,
+    bool clearClassFilter = false,
     String? errorMessage,
     bool clearError = false,
     bool? isMutating,
@@ -47,6 +61,7 @@ class StudentsState extends Equatable {
       status: status ?? this.status,
       all: all ?? this.all,
       query: query ?? this.query,
+      classFilter: clearClassFilter ? null : (classFilter ?? this.classFilter),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isMutating: isMutating ?? this.isMutating,
       actionError: clearActionError ? null : (actionError ?? this.actionError),
@@ -58,6 +73,7 @@ class StudentsState extends Equatable {
     status,
     all,
     query,
+    classFilter,
     errorMessage,
     isMutating,
     actionError,

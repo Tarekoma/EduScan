@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 
 import '../services/user_provisioner.dart';
+import '../theme/theme_cubit.dart';
 
 import '../../features/attendance/attendance_injection.dart';
 import '../../features/dashboard/dashboard_injection.dart';
@@ -48,5 +49,6 @@ Future<void> configureDependencies() async {
   sl<PickupAlertCubit>();
 
   // ---- Cross-cutting -------------------------------------------------
+  sl.registerLazySingleton(() => ThemeCubit());
   sl.registerLazySingleton(() => AppRouter(sl<AuthCubit>()));
 }

@@ -3,8 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/time_format.dart';
+import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/sign_out_button.dart';
+import '../../../../core/widgets/theme_toggle_button.dart';
 import '../cubit/excel_cubit.dart';
 
 /// Manager screen: export attendance to Excel and import the institution's
@@ -40,7 +44,17 @@ class _ExcelViewState extends State<_ExcelView> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Excel'),
+          toolbarHeight: 76,
+          title: const PageHeader(
+            title: 'Excel',
+            subtitle: 'Import and export attendance data',
+          ),
+          actions: [
+            if (context.isMobile) ...[
+              const ThemeToggleButton(),
+              const SignOutButton(),
+            ],
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Export'),

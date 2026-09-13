@@ -7,6 +7,7 @@ import '../../../../core/enums/attendance_state.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/time_format.dart';
 import '../../../../core/widgets/app_state_views.dart';
+import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../attendance/domain/entities/attendance_record.dart';
 import '../../../attendance/presentation/attendance_status_display.dart';
@@ -33,7 +34,8 @@ class _ParentDashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My children'),
+        toolbarHeight: 76,
+        title: const PageHeader(title: 'My children'),
         actions: [
           IconButton(
             tooltip: 'Sign out',

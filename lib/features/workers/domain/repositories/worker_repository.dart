@@ -1,17 +1,11 @@
+import '../../../../core/enums/worker_job_title.dart';
 import '../entities/worker.dart';
 
 class WorkerDraft {
-  const WorkerDraft({
-    required this.fullName,
-    required this.job,
-    this.department,
-    this.phone,
-  });
+  const WorkerDraft({required this.fullName, required this.jobTitle});
 
   final String fullName;
-  final String job;
-  final String? department;
-  final String? phone;
+  final WorkerJobTitle jobTitle;
 }
 
 abstract interface class WorkerRepository {

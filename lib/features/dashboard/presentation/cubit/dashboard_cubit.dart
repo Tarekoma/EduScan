@@ -15,6 +15,7 @@ import '../../../students/domain/usecases/student_usecases.dart';
 import '../../../user_management/domain/usecases/user_admin_usecases.dart';
 import '../../../workers/domain/entities/worker.dart';
 import '../../../workers/domain/usecases/worker_usecases.dart';
+import '../../domain/attendance_report_stats.dart';
 import '../../domain/dashboard_stats.dart';
 
 part 'dashboard_state.dart';
@@ -31,7 +32,13 @@ class DashboardCubit extends Cubit<DashboardState> {
        _watchWorkers = watchWorkers,
        _attendance = attendanceRepository,
        _watchSecurity = watchUsersByRole,
-       super(DashboardState(date: DateTime.now()));
+       super(
+         DashboardState(
+           date: DateTime.now(),
+           reportFrom: DateTime.now().subtract(const Duration(days: 6)),
+           reportTo: DateTime.now(),
+         ),
+       );
 
   final WatchStudents _watchStudents;
   final WatchWorkers _watchWorkers;
@@ -42,6 +49,7 @@ class DashboardCubit extends Cubit<DashboardState> {
   StreamSubscription<List<Worker>>? _workersSub;
   StreamSubscription<List<AttendanceRecord>>? _attendanceSub;
   StreamSubscription<List<AppUser>>? _securitySub;
+  int _reportRequestId = 0;
 
   void start() {
     if (_studentsSub != null) return;
@@ -62,6 +70,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       onError: (_, __) {},
     );
     _subscribeAttendance();
+    _loadReport();
   }
 
   void _subscribeAttendance() {
@@ -89,6 +98,40 @@ class DashboardCubit extends Cubit<DashboardState> {
 
   void setTypeFilter(PersonType? type) =>
       emit(state.copyWith(typeFilter: type, clearTypeFilter: type == null));
+
+  /// Loads the report section (rate-over-time / class comparison / detailed
+  /// table) for a new date range. Uses a one-shot [AttendanceRepository.getInRange]
+  /// fetch — historical reporting doesn't need a live subscription.
+  Future<void> setReportRange(DateTime from, DateTime to) async {
+    emit(state.copyWith(reportFrom: from, reportTo: to));
+    await _loadReport();
+  }
+
+  Future<void> _loadReport() async {
+    final requestId = ++_reportRequestId;
+    emit(state.copyWith(reportStatus: DashboardReportStatus.loading));
+    try {
+      final records = await _attendance.getInRange(
+        fromDate: DateKey.of(state.reportFrom),
+        toDate: DateKey.of(state.reportTo),
+      );
+      if (requestId != _reportRequestId) return; // superseded by a newer pick
+      emit(
+        state.copyWith(
+          reportRecords: records,
+          reportStatus: DashboardReportStatus.ready,
+        ),
+      );
+    } catch (e, s) {
+      if (requestId != _reportRequestId) return;
+      emit(
+        state.copyWith(
+          reportStatus: DashboardReportStatus.error,
+          reportErrorMessage: ErrorMapper.map(e, s).message,
+        ),
+      );
+    }
+  }
 
   void _onError(Object e, StackTrace s) => emit(
     state.copyWith(

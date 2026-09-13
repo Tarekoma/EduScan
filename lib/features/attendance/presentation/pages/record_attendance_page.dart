@@ -10,8 +10,11 @@ import '../../../../core/enums/person_type.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/person_id.dart';
 import '../../../../core/utils/time_format.dart';
+import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/primary_button.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../../core/widgets/sign_out_button.dart';
+import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../core/utils/responsive.dart';
 import '../../../pickup/presentation/cubit/pickup_alert_cubit.dart';
 import '../../domain/attendance_rules.dart';
 import '../cubit/record_attendance_cubit.dart';
@@ -53,7 +56,6 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
     if (!_formKey.currentState!.validate()) return;
     context.read<RecordAttendanceCubit>().submit(
       personId: _idController.text.trim().toUpperCase(),
-      personType: _type,
       action: action,
     );
   }
@@ -86,7 +88,11 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
   Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Record attendance'),
+        toolbarHeight: 76,
+        title: const PageHeader(
+          title: 'Record attendance',
+          subtitle: 'Scan or enter an ID',
+        ),
         actions: [
           if (AppConfig.pickupEnabled)
             BlocBuilder<PickupAlertCubit, PickupAlertState>(
@@ -100,16 +106,10 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
                 onPressed: () => context.push(AppRoutes.securityPickup),
               ),
             ),
-          IconButton(
-            tooltip: 'Contact staff',
-            icon: const Icon(Icons.contact_phone_outlined),
-            onPressed: () => context.push(AppRoutes.securityWorkers),
-          ),
-          IconButton(
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthCubit>().signOut(),
-          ),
+          if (context.isMobile) ...[
+            const ThemeToggleButton(),
+            const SignOutButton(),
+          ],
         ],
       ),
       body: SingleChildScrollView(

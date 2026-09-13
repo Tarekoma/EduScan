@@ -3,6 +3,12 @@
 abstract final class AppConfig {
   static const String appName = 'EduScan';
 
+  /// Branding tagline shown under the logo on the splash/login screens.
+  static const String tagline = 'Scan Today. Brighter Tomorrow.';
+
+  /// Shared path to the app logo (registered under `flutter.assets`).
+  static const String logoAsset = 'assets/images/EduScan_app_logo.png';
+
   /// Responsive breakpoints (logical pixels).
   static const double mobileBreakpoint = 600;
   static const double tabletBreakpoint = 1024;

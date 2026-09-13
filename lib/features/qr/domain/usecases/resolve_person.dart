@@ -44,7 +44,7 @@ class ResolvePerson {
           personId: w.workerId,
           personType: PersonType.worker,
           displayName: w.fullName,
-          subtitle: w.job,
+          subtitle: w.jobTitle.label,
         );
     }
   }

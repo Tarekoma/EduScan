@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/enums/attendance_state.dart';
 import '../../../../core/enums/pickup_status.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/time_format.dart';
@@ -56,25 +57,27 @@ class _CardBody extends StatelessWidget {
                 if (state.status == ParentPickupStatus.loading)
                   const Center(child: CircularProgressIndicator())
                 else if (request == null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        "Tap when you have arrived to collect your child.",
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      PrimaryButton(
-                        label: "I'm here to pick up my child",
-                        icon: Icons.directions_car,
-                        isLoading: state.isSubmitting,
-                        onPressed: () => cubit.request(
-                          studentId: child.studentId,
-                          studentName: child.fullName,
-                          className: child.className,
-                        ),
-                      ),
-                    ],
-                  )
+                  state.childState == AttendanceState.inside
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              "Tap when you have arrived to collect your child.",
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            PrimaryButton(
+                              label: "I'm here to pick up my child",
+                              icon: Icons.directions_car,
+                              isLoading: state.isSubmitting,
+                              onPressed: () => cubit.request(
+                                studentId: child.studentId,
+                                studentName: child.fullName,
+                                className: child.className,
+                              ),
+                            ),
+                          ],
+                        )
+                      : _NotEligibleNotice(childState: state.childState)
                 else
                   _ActiveRequest(
                     request: request,
@@ -85,6 +88,36 @@ class _CardBody extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Shown instead of the request button when the child isn't currently
+/// checked in — there is nothing to pick up yet, or they've already left.
+class _NotEligibleNotice extends StatelessWidget {
+  const _NotEligibleNotice({required this.childState});
+
+  final AttendanceState childState;
+
+  @override
+  Widget build(BuildContext context) {
+    final message = switch (childState) {
+      AttendanceState.absent => "Your child hasn't checked in yet today.",
+      AttendanceState.left =>
+        'Your child has already checked out for today.',
+      AttendanceState.inside => '',
+    };
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.info_outline,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: Text(message)),
+      ],
     );
   }
 }

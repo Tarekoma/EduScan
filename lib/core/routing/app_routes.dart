@@ -8,6 +8,7 @@ abstract final class AppRoutes {
   static const String securityScan = '/security/scan';
   static const String securityPickup = '/security/pickup';
   static const String securityFace = '/security/face';
+  static const String securityStudents = '/security/students';
   static const String securityWorkers = '/security/workers';
   static const String managerHome = '/manager';
   static const String supervisorHome = '/supervisor';

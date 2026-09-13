@@ -15,7 +15,7 @@ class ResolvedPerson extends Equatable {
   final PersonType personType;
   final String displayName;
 
-  /// Class (student) or job (worker), for confirmation UI.
+  /// Class (student) or job title (worker), for confirmation UI.
   final String? subtitle;
 
   @override
