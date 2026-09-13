@@ -1,0 +1,73 @@
+name: attendance_management
+description: "Production Attendance Management System for a real institution."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Firebase
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.3.4
+  cloud_firestore: ^5.6.0
+
+  # State management
+  flutter_bloc: ^9.0.0
+  equatable: ^2.0.7
+
+  # Dependency injection
+  get_it: ^8.0.3
+
+  # Routing
+  go_router: ^14.6.2
+
+  # QR
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.2.3
+
+  # Charts
+  fl_chart: ^0.69.2
+
+  # Utils
+  intl: ^0.19.0
+  url_launcher: ^6.3.1
+  audioplayers: ^6.1.0
+
+  # Excel import / export
+  excel: ^4.0.6
+  file_picker: ^8.1.4
+  share_plus: ^10.1.2
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
+  flutter_launcher_icons: ^0.14.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sounds/
+    - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/EduScan_app_logo.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/images/EduScan_app_logo.png"
+  windows:
+    generate: true
+    image_path: "assets/images/EduScan_app_logo.png"

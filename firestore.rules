@@ -1,0 +1,203 @@
+rules_version = '2';
+
+// Attendance Management System — Firestore Security Rules
+//
+// Authoritative access control. The Flutter UI only hides unauthorised actions;
+// these rules enforce them. There is no server tier: privileged operations
+// (provisioning accounts, bulk import) run from the manager's client and are
+// validated here. Auth-account creation happens on a throwaway secondary app so
+// the manager's session survives; a client cannot disable or delete another
+// user's Auth record, so deactivation is the `isActive` flag below and account
+// deletion removes the profile only.
+//
+// Role / permission matrix: see SECURITY.md.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Helpers --------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function role() {
+      return userDoc().role;
+    }
+
+    function isActive() {
+      return userDoc().isActive == true;
+    }
+
+    function hasRole(r) {
+      return isSignedIn() && isActive() && role() == r;
+    }
+
+    function isInternal() {
+      return isSignedIn() && isActive()
+        && role() in ['security', 'manager', 'supervisor'];
+    }
+
+    // Parent ↔ student link, validated server-side. Never trust a studentId
+    // supplied by the client without this check.
+    function parentOwnsStudent(studentId) {
+      return hasRole('parent') && studentId in userDoc().studentIds;
+    }
+
+    function isNonEmptyString(v) {
+      return v is string && v.size() > 0;
+    }
+
+    // Fields that must not change between the stored and incoming document.
+    function unchanged(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(keys) == false;
+    }
+
+    // ---- users --------------------------------------------------------
+    match /users/{uid} {
+      // Own profile always; internal staff may read others for lookup.
+      allow read: if isSignedIn() && (request.auth.uid == uid || isInternal());
+
+      // A manager provisions accounts directly. The Auth user is created first
+      // (secondary app), then this profile is written and validated here.
+      allow create: if hasRole('manager')
+        && request.resource.data.uid == uid
+        && isNonEmptyString(request.resource.data.name)
+        && isNonEmptyString(request.resource.data.email)
+        && request.resource.data.role in ['security', 'manager', 'supervisor', 'parent']
+        && request.resource.data.isActive == true;
+
+      // Manager may change isActive and (for parents) studentIds. Identity and
+      // audit fields are locked.
+      allow update: if hasRole('manager')
+        && unchanged(['uid', 'email', 'role', 'createdAt', 'createdBy']);
+
+      allow delete: if hasRole('manager');
+    }
+
+    // ---- metadata (sequential id counters) -------------------------
+    match /metadata/{doc} {
+      allow read, write: if hasRole('manager');
+    }
+
+    // ---- students ----------------------------------------------------
+    match /students/{studentId} {
+      allow read: if isInternal() || parentOwnsStudent(studentId);
+
+      allow create: if hasRole('manager')
+        && request.resource.data.studentId == studentId
+        && request.resource.data.qrCodeId == studentId
+        && isNonEmptyString(request.resource.data.fullName)
+        && isNonEmptyString(request.resource.data.className);
+
+      allow update: if hasRole('manager')
+        && unchanged(['studentId', 'qrCodeId', 'createdAt'])
+        && isNonEmptyString(request.resource.data.fullName)
+        && isNonEmptyString(request.resource.data.className);
+
+      allow delete: if hasRole('manager');
+    }
+
+    // ---- workers ---------------------------------------------------
+    match /workers/{workerId} {
+      allow read: if isInternal();
+
+      allow create: if hasRole('manager')
+        && request.resource.data.workerId == workerId
+        && request.resource.data.qrCodeId == workerId
+        && isNonEmptyString(request.resource.data.fullName)
+        && isNonEmptyString(request.resource.data.job);
+
+      allow update: if hasRole('manager')
+        && unchanged(['workerId', 'qrCodeId', 'createdAt'])
+        && isNonEmptyString(request.resource.data.fullName)
+        && isNonEmptyString(request.resource.data.job);
+
+      allow delete: if hasRole('manager');
+    }
+
+    // ---- attendance ----------------------------------------------
+    match /attendance/{attendanceId} {
+      // Internal staff view all; parents view only their child's.
+      allow read: if isInternal()
+        || (resource.data.personType == 'student'
+            && parentOwnsStudent(resource.data.personId));
+
+      // Security records or corrects attendance (Rules 9–11); a manager may also
+      // write it for the one-time historical Excel import. Business state rules
+      // (Rules 1–3) are enforced transactionally in the client and cannot be
+      // expressed here; identity fields are locked down instead.
+      allow create: if (hasRole('security') || hasRole('manager'))
+        && request.resource.data.personType in ['student', 'worker']
+        && request.resource.data.date is string
+        && request.resource.data.personId is string;
+
+      allow update: if (hasRole('security') || hasRole('manager'))
+        && unchanged(['personId', 'personType', 'date',
+                      'checkInRecordedBy', 'checkInRecordedAt']);
+
+      allow delete: if false;
+    }
+
+    // ---- pickupRequests -----------------------------------------
+    match /pickupRequests/{requestId} {
+      allow read: if isInternal()
+        || (hasRole('parent') && resource.data.parentId == request.auth.uid);
+
+      allow create: if hasRole('parent')
+        && request.resource.data.parentId == request.auth.uid
+        && parentOwnsStudent(request.resource.data.studentId)
+        && request.resource.data.status == 'pending'
+        && request.resource.data.requestedAt == request.time
+        && isNonEmptyString(request.resource.data.studentName)
+        && isNonEmptyString(request.resource.data.parentName);
+
+      // Security transitions status; a parent may only cancel their own.
+      allow update: if unchanged(['studentId', 'parentId', 'requestedAt'])
+        && (
+          hasRole('security')
+          || (hasRole('parent')
+              && resource.data.parentId == request.auth.uid
+              && request.resource.data.status == 'cancelled')
+        );
+
+      allow delete: if false;
+    }
+
+    // ---- pickupActive (per-student active-request guard) -----------
+    match /pickupActive/{studentId} {
+      allow read: if isInternal()
+        || (hasRole('parent') && parentOwnsStudent(studentId));
+
+      allow create: if hasRole('parent')
+        && parentOwnsStudent(studentId)
+        && request.resource.data.parentId == request.auth.uid;
+
+      allow delete: if hasRole('security')
+        || (hasRole('parent') && parentOwnsStudent(studentId));
+
+      allow update: if false;
+    }
+
+    // ---- faceEnrollments (biometric — sensitive) -----------------
+    // Only security enrols and reads embeddings, and only for attendance.
+    // Documents store the numeric descriptor only, never a raw image.
+    match /faceEnrollments/{docId} {
+      allow read: if hasRole('security');
+      allow create, update: if hasRole('security')
+        && request.resource.data.embedding is list
+        && request.resource.data.personId is string
+        && request.resource.data.personType in ['student', 'worker'];
+      allow delete: if hasRole('security') || hasRole('manager');
+    }
+
+    // Default deny.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
