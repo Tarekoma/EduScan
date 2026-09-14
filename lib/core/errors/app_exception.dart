@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// Base class for every error thrown by the data and domain layers.
 ///
 /// The [message] is safe to show to end users — raw Firebase messages must be
@@ -13,10 +15,8 @@ sealed class AppException implements Exception {
 }
 
 class NetworkException extends AppException {
-  const NetworkException({
-    String message = 'No internet connection.',
-    Object? cause,
-  }) : super(message, cause: cause);
+  NetworkException({String? message, Object? cause})
+    : super(message ?? appStrings.errorNoInternet, cause: cause);
 }
 
 class AuthException extends AppException {
@@ -24,10 +24,8 @@ class AuthException extends AppException {
 }
 
 class PermissionException extends AppException {
-  const PermissionException({
-    String message = 'You are not allowed to perform this action.',
-    Object? cause,
-  }) : super(message, cause: cause);
+  PermissionException({String? message, Object? cause})
+    : super(message ?? appStrings.errorNotAllowed, cause: cause);
 }
 
 class NotFoundException extends AppException {
@@ -44,8 +42,6 @@ class BusinessRuleException extends AppException {
 }
 
 class UnknownException extends AppException {
-  const UnknownException({
-    String message = 'Something went wrong. Please try again.',
-    Object? cause,
-  }) : super(message, cause: cause);
+  UnknownException({String? message, Object? cause})
+    : super(message ?? appStrings.errorSomethingWentWrong, cause: cause);
 }

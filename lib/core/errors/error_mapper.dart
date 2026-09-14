@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'app_exception.dart';
+import '../l10n/app_strings.dart';
 
 /// Converts any thrown object into a typed, user-safe [AppException].
 ///
@@ -18,17 +19,18 @@ abstract final class ErrorMapper {
   }
 
   static AppException _mapAuth(FirebaseAuthException e) {
+    final l10n = appStrings;
     final message = switch (e.code) {
-      'invalid-email' => 'The email address is not valid.',
-      'user-disabled' => 'This account has been deactivated.',
+      'invalid-email' => l10n.errorInvalidEmail,
+      'user-disabled' => l10n.errorAccountDeactivated,
       'user-not-found' ||
       'wrong-password' ||
-      'invalid-credential' => 'Incorrect email or password.',
-      'too-many-requests' => 'Too many attempts. Please try again later.',
-      'network-request-failed' => 'No internet connection.',
-      'email-already-in-use' => 'An account already exists for that email.',
-      'weak-password' => 'The password is too weak.',
-      _ => 'Authentication failed. Please try again.',
+      'invalid-credential' => l10n.errorIncorrectCredentials,
+      'too-many-requests' => l10n.errorTooManyAttempts,
+      'network-request-failed' => l10n.errorNoInternet,
+      'email-already-in-use' => l10n.errorEmailInUse,
+      'weak-password' => l10n.errorWeakPassword,
+      _ => l10n.errorAuthFailed,
     };
     if (e.code == 'network-request-failed') {
       return NetworkException(cause: e);
@@ -38,10 +40,8 @@ abstract final class ErrorMapper {
 
   static AppException _mapFirebase(FirebaseException e) {
     return switch (e.code) {
-      'permission-denied' => const PermissionException(),
-      'not-found' => const NotFoundException(
-        'The requested data was not found.',
-      ),
+      'permission-denied' => PermissionException(),
+      'not-found' => NotFoundException(appStrings.errorDataNotFound),
       'unavailable' || 'deadline-exceeded' => NetworkException(cause: e),
       _ => UnknownException(cause: e),
     };

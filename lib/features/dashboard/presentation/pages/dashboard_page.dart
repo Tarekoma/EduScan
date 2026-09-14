@@ -8,10 +8,12 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/time_format.dart';
 import '../../../../core/widgets/app_state_views.dart';
+import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/sign_out_button.dart';
 import '../../../../core/widgets/theme_toggle_button.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../attendance/presentation/attendance_status_display.dart';
 import '../cubit/dashboard_cubit.dart';
 import '../widgets/attendance_rate_chart.dart';
@@ -48,7 +50,8 @@ class _DashboardView extends StatelessWidget {
         }
         if (state.status == DashboardStatus.error) {
           return ErrorView(
-            message: state.errorMessage ?? 'Could not load the dashboard.',
+            message: state.errorMessage ??
+                AppLocalizations.of(context)!.dashboardCouldNotLoad,
             onRetry: () => context.read<DashboardCubit>().start(),
           );
         }
@@ -65,13 +68,7 @@ class _Content extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stats = state.stats;
-    final statColumns = responsiveValue(
-      context,
-      mobile: 2,
-      tablet: 3,
-      desktop: 5,
-    );
+    final l10n = AppLocalizations.of(context)!;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -79,22 +76,61 @@ class _Content extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Expanded(
+            Expanded(
               child: PageHeader(
-                title: 'Dashboard',
-                subtitle: "Today's attendance and historical reports",
+                title: l10n.dashboardTitle,
+                subtitle: l10n.dashboardSubtitle,
               ),
             ),
             if (context.isMobile) ...[
               const ThemeToggleButton(),
+              const LocaleToggleButton(),
               const SignOutButton(),
             ],
           ],
         ),
         const SizedBox(height: AppSpacing.md),
 
-        // --- Today's snapshot --------------------------------------------
-        const SectionHeader(title: "Today's snapshot"),
+        TodaySnapshotSection(state: state),
+
+        const SizedBox(height: AppSpacing.xl),
+        const Divider(),
+        const SizedBox(height: AppSpacing.md),
+
+        // --- Reports --------------------------------------------------------
+        SectionHeader(title: l10n.sectionAttendanceReports),
+        const SizedBox(height: AppSpacing.sm),
+        _ReportRangeBar(state: state),
+        const SizedBox(height: AppSpacing.md),
+        _ReportBody(state: state),
+      ],
+    );
+  }
+}
+
+/// The "Today's snapshot" stat grid plus the "Recent activity" list — the
+/// live, same-day view shared by the manager/supervisor [DashboardPage] and
+/// the read-only security-role dashboard tab.
+class TodaySnapshotSection extends StatelessWidget {
+  const TodaySnapshotSection({super.key, required this.state});
+
+  final DashboardState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = state.stats;
+    final l10n = AppLocalizations.of(context)!;
+    final statColumns = responsiveValue(
+      context,
+      mobile: 2,
+      tablet: 3,
+      desktop: 5,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: l10n.sectionTodaySnapshot),
         const SizedBox(height: AppSpacing.sm),
         _TodayFilterBar(state: state),
         const SizedBox(height: AppSpacing.md),
@@ -107,28 +143,28 @@ class _Content extends StatelessWidget {
           childAspectRatio: 1.5,
           children: [
             StatCard.count(
-              label: 'Total people',
+              label: l10n.statTotalPeople,
               value: stats.totalPeople,
               icon: Icons.groups,
             ),
             StatCard.count(
-              label: 'Checked in',
+              label: l10n.checkedInTitle,
               value: stats.checkedIn,
               icon: Icons.login,
             ),
             StatCard.count(
-              label: 'Currently inside',
+              label: l10n.statCurrentlyInside,
               value: stats.currentlyInside,
               icon: Icons.meeting_room,
               tone: Theme.of(context).colorScheme.tertiary,
             ),
             StatCard.count(
-              label: 'Checked out',
+              label: l10n.checkedOutTitle,
               value: stats.checkedOut,
               icon: Icons.logout,
             ),
             StatCard.count(
-              label: 'Absent',
+              label: l10n.attendanceStateAbsent,
               value: stats.absent,
               icon: Icons.person_off,
               tone: AppColors.danger,
@@ -137,7 +173,7 @@ class _Content extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         SectionHeader(
-          title: 'Recent activity',
+          title: l10n.sectionRecentActivity,
           trailing: Text(
             TimeFormat.date(state.date),
             style: Theme.of(context).textTheme.bodySmall,
@@ -150,20 +186,9 @@ class _Content extends StatelessWidget {
             child: Center(child: CircularProgressIndicator()),
           )
         else if (state.activity.isEmpty)
-          const EmptyView(message: 'No attendance recorded for this day.')
+          EmptyView(message: l10n.dashboardNoAttendanceForDay)
         else
           ...state.activity.map((item) => _ActivityTile(item: item)),
-
-        const SizedBox(height: AppSpacing.xl),
-        const Divider(),
-        const SizedBox(height: AppSpacing.md),
-
-        // --- Reports --------------------------------------------------------
-        const SectionHeader(title: 'Attendance reports'),
-        const SizedBox(height: AppSpacing.sm),
-        _ReportRangeBar(state: state),
-        const SizedBox(height: AppSpacing.md),
-        _ReportBody(state: state),
       ],
     );
   }
@@ -176,6 +201,7 @@ class _ReportBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (state.reportStatus == DashboardReportStatus.loading ||
         state.reportStatus == DashboardReportStatus.initial) {
       return const Padding(
@@ -185,7 +211,7 @@ class _ReportBody extends StatelessWidget {
     }
     if (state.reportStatus == DashboardReportStatus.error) {
       return ErrorView(
-        message: state.reportErrorMessage ?? 'Could not load the report.',
+        message: state.reportErrorMessage ?? l10n.dashboardReportCouldNotLoad,
         onRetry: () => context.read<DashboardCubit>().setReportRange(
           state.reportFrom,
           state.reportTo,
@@ -199,9 +225,7 @@ class _ReportBody extends StatelessWidget {
     return Column(
       children: [
         if (state.students.isEmpty)
-          const EmptyView(
-            message: 'No students yet — add students to see reports.',
-          )
+          EmptyView(message: l10n.dashboardNoStudentsYet)
         else ...[
           GridView.count(
             crossAxisCount: columns,
@@ -211,25 +235,20 @@ class _ReportBody extends StatelessWidget {
             crossAxisSpacing: AppSpacing.sm,
             childAspectRatio: columns == 1 ? 2.6 : 1.7,
             children: [
-              StatCard(
-                label: 'Avg attendance rate',
-                value:
-                    '${(report.avgAttendanceRate * 100).toStringAsFixed(1)}%',
-                icon: Icons.check_circle_outline,
-                tone: AppColors.success,
-              ),
               StatCard.count(
-                label: 'Frequently absent',
+                label: l10n.statFrequentlyAbsent,
                 value: report.chronicAbsenceCount,
                 icon: Icons.person_off_outlined,
                 tone: AppColors.danger,
                 trendLabel: report.totalDays == 0
                     ? null
-                    : 'Missed ≥${report.chronicAbsenceThresholdDays} of '
-                          '${report.totalDays} day(s)',
+                    : l10n.dashboardMissedDays(
+                        report.chronicAbsenceThresholdDays,
+                        report.totalDays,
+                      ),
               ),
               StatCard.count(
-                label: 'Perfect attendance',
+                label: l10n.statPerfectAttendance,
                 value: report.perfectAttendanceCount,
                 icon: Icons.emoji_events_outlined,
                 tone: AppColors.info,
@@ -237,7 +256,10 @@ class _ReportBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          AttendanceRateChart(points: report.dailyRates),
+          AttendanceRateChart(
+            points: report.dailyRates,
+            totalStudents: state.students.length,
+          ),
           const SizedBox(height: AppSpacing.md),
           ClassComparisonList(rows: report.perClass),
           const SizedBox(height: AppSpacing.md),
@@ -256,6 +278,7 @@ class _TodayFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<DashboardCubit>();
+    final l10n = AppLocalizations.of(context)!;
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
@@ -277,10 +300,10 @@ class _TodayFilterBar extends StatelessWidget {
         ),
         SegmentedButton<PersonType?>(
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: null, label: Text('All')),
-            ButtonSegment(value: PersonType.student, label: Text('Students')),
-            ButtonSegment(value: PersonType.worker, label: Text('Workers')),
+          segments: [
+            ButtonSegment(value: null, label: Text(l10n.filterAll)),
+            ButtonSegment(value: PersonType.student, label: Text(l10n.filterStudents)),
+            ButtonSegment(value: PersonType.worker, label: Text(l10n.filterWorkers)),
           ],
           selected: {state.typeFilter},
           onSelectionChanged: (s) => cubit.setTypeFilter(s.first),
@@ -347,11 +370,15 @@ class _ActivityTile extends StatelessWidget {
           ),
           title: Text(item.personName),
           subtitle: Text(
-            '${item.personId}  •  In ${TimeFormat.time(item.checkIn)}  •  '
-            'Out ${TimeFormat.time(item.checkOut)}\nRecorded by ${item.recordedBy}',
+            AppLocalizations.of(context)!.dashboardActivitySubtitle(
+              item.personId,
+              TimeFormat.time(item.checkIn),
+              TimeFormat.time(item.checkOut),
+              item.recordedBy,
+            ),
           ),
           isThreeLine: true,
-          trailing: StatusBadge(label: derived.label, tone: derived.tone),
+          trailing: StatusBadge(label: derived.label(context), tone: derived.tone),
         ),
       ),
     );

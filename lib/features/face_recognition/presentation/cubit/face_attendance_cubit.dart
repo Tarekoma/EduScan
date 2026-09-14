@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../attendance/domain/attendance_rules.dart';
 import '../../../attendance/domain/repositories/attendance_repository.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -51,7 +52,7 @@ class FaceAttendanceCubit extends Cubit<FaceAttendanceState> {
       emit(
         state.copyWith(
           status: FaceStatus.failure,
-          message: 'Only security may record attendance.',
+          message: appStrings.attendanceOnlySecurityCanRecord,
         ),
       );
       return;

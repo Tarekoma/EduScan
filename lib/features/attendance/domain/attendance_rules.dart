@@ -1,5 +1,6 @@
 import '../../../core/enums/attendance_state.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../../core/l10n/app_strings.dart';
 import 'entities/attendance_record.dart';
 
 enum AttendanceAction { checkIn, checkOut }
@@ -16,13 +17,9 @@ abstract final class AttendanceRules {
       case AttendanceState.absent:
         return;
       case AttendanceState.inside:
-        throw const BusinessRuleException(
-          'This person is already checked in and currently inside.',
-        );
+        throw BusinessRuleException(appStrings.attendanceAlreadyInside);
       case AttendanceState.left:
-        throw const BusinessRuleException(
-          'This person has already completed attendance for today.',
-        );
+        throw BusinessRuleException(appStrings.attendanceAlreadyCompleted);
     }
   }
 
@@ -30,12 +27,10 @@ abstract final class AttendanceRules {
   /// Rule 3: cannot check out twice.
   static void assertCanCheckOut(AttendanceRecord? current) {
     if (current == null || current.checkIn == null) {
-      throw const BusinessRuleException('This person has not checked in yet.');
+      throw BusinessRuleException(appStrings.attendanceNotCheckedInYet);
     }
     if (current.checkOut != null) {
-      throw const BusinessRuleException(
-        'This person has already checked out today.',
-      );
+      throw BusinessRuleException(appStrings.attendanceAlreadyCheckedOutToday);
     }
   }
 
@@ -46,8 +41,8 @@ abstract final class AttendanceRules {
     return switch (state) {
       AttendanceState.absent => AttendanceAction.checkIn,
       AttendanceState.inside => AttendanceAction.checkOut,
-      AttendanceState.left => throw const BusinessRuleException(
-        'This person has already completed attendance for today.',
+      AttendanceState.left => throw BusinessRuleException(
+        appStrings.attendanceAlreadyCompleted,
       ),
     };
   }

@@ -5,10 +5,12 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/time_format.dart';
+import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/sign_out_button.dart';
 import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../cubit/excel_cubit.dart';
 
 /// Manager screen: export attendance to Excel and import the institution's
@@ -40,25 +42,27 @@ class _ExcelViewState extends State<_ExcelView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 76,
-          title: const PageHeader(
-            title: 'Excel',
-            subtitle: 'Import and export attendance data',
+          title: PageHeader(
+            title: l10n.excelTitle,
+            subtitle: l10n.excelSubtitle,
           ),
           actions: [
             if (context.isMobile) ...[
               const ThemeToggleButton(),
+              const LocaleToggleButton(),
               const SignOutButton(),
             ],
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Export'),
-              Tab(text: 'Import'),
+              Tab(text: l10n.exportTabLabel),
+              Tab(text: l10n.importTabLabel),
             ],
           ),
         ),
@@ -80,25 +84,23 @@ class _ExcelViewState extends State<_ExcelView> {
   }
 
   Widget _exportTab(BuildContext context, ExcelState state) {
+    final l10n = AppLocalizations.of(context)!;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         Text(
-          'Attendance export',
+          l10n.excelAttendanceExportTitle,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: AppSpacing.sm),
-        const Text(
-          'Columns: Date, Person ID, Name, Person Type, Check-in, Check-out, '
-          'Recorded by, Recorded at.',
-        ),
+        Text(l10n.excelExportColumnsHint),
         const SizedBox(height: AppSpacing.md),
         Card(
           child: ListTile(
             leading: const Icon(Icons.date_range),
-            title: const Text('Date range'),
+            title: Text(l10n.dateRangeLabel),
             subtitle: Text(
-              '${TimeFormat.date(_range.start)}  –  ${TimeFormat.date(_range.end)}',
+              l10n.dateRangeValue(TimeFormat.date(_range.start), TimeFormat.date(_range.end)),
             ),
             trailing: const Icon(Icons.edit),
             onTap: () async {
@@ -115,7 +117,7 @@ class _ExcelViewState extends State<_ExcelView> {
         ),
         const SizedBox(height: AppSpacing.lg),
         PrimaryButton(
-          label: 'Export & share',
+          label: l10n.exportAndShareButton,
           icon: Icons.file_download,
           isLoading: state.exporting,
           onPressed: () => context.read<ExcelCubit>().exportAttendance(
@@ -129,12 +131,13 @@ class _ExcelViewState extends State<_ExcelView> {
 
   Widget _importTab(BuildContext context, ExcelState state) {
     final cubit = context.read<ExcelCubit>();
+    final l10n = AppLocalizations.of(context)!;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         _ImportSection(
-          title: 'Students',
-          hint: 'Headers: fullName, className',
+          title: l10n.filterStudents,
+          hint: l10n.importStudentsHint,
           busy: state.busy,
           preview: state.studentPreview == null
               ? null
@@ -148,10 +151,8 @@ class _ExcelViewState extends State<_ExcelView> {
         ),
         const SizedBox(height: AppSpacing.lg),
         _ImportSection(
-          title: 'Attendance history',
-          hint:
-              'Headers: date (yyyy-MM-dd), Person ID, Person Type, '
-              'Check-in (HH:mm), Check-out (HH:mm)',
+          title: l10n.importAttendanceTitle,
+          hint: l10n.importAttendanceHint,
           busy: state.busy,
           preview: state.attendancePreview == null
               ? null
@@ -195,6 +196,7 @@ class _ImportSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -209,13 +211,13 @@ class _ImportSection extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: busy ? null : onPick,
                 icon: const Icon(Icons.upload_file),
-                label: const Text('Choose .xlsx file'),
+                label: Text(l10n.chooseXlsxFileButton),
               )
             else ...[
-              Text('${preview!.ready} row(s) ready to import.'),
+              Text(l10n.rowsReadyToImport(preview!.ready)),
               if (preview!.skipped.isNotEmpty)
                 Text(
-                  'Skipped rows: ${preview!.skipped.join(', ')}',
+                  l10n.skippedRowsLabel(preview!.skipped.join(', ')),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               const SizedBox(height: AppSpacing.sm),
@@ -223,7 +225,7 @@ class _ImportSection extends StatelessWidget {
                 children: [
                   Expanded(
                     child: PrimaryButton(
-                      label: 'Import ${preview!.ready}',
+                      label: l10n.importButton(preview!.ready),
                       isLoading: busy,
                       onPressed: preview!.ready == 0 ? null : onConfirm,
                     ),
@@ -231,7 +233,7 @@ class _ImportSection extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   TextButton(
                     onPressed: busy ? null : onClear,
-                    child: const Text('Cancel'),
+                    child: Text(l10n.commonCancel),
                   ),
                 ],
               ),

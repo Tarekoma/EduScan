@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/time_format.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../cubit/record_attendance_cubit.dart';
 
 /// Security QR scan flow. Each detected code is resolved to a person and
@@ -55,7 +56,7 @@ class _ScanViewState extends State<_ScanView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan QR'),
+        title: Text(AppLocalizations.of(context)!.scanQrTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),
@@ -108,30 +109,31 @@ class _ResultBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     final (Color bg, Color fg, String text) = switch (state.status) {
       RecordStatus.idle => (
         scheme.surfaceContainerHighest,
         scheme.onSurface,
-        'Point the camera at a student or worker QR code.',
+        l10n.scanPointCamera,
       ),
       RecordStatus.submitting => (
         scheme.surfaceContainerHighest,
         scheme.onSurface,
-        'Recording…',
+        l10n.scanRecording,
       ),
       RecordStatus.failure => (
         scheme.errorContainer,
         scheme.onErrorContainer,
-        state.message ?? 'Could not record attendance.',
+        state.message ?? l10n.couldNotRecordAttendance,
       ),
       RecordStatus.success => (
         scheme.secondaryContainer,
         scheme.onSecondaryContainer,
         () {
           final r = state.record!;
-          final verb = r.checkOut != null ? 'Checked out' : 'Checked in';
+          final verb = r.checkOut != null ? l10n.checkedOutTitle : l10n.checkedInTitle;
           final time = TimeFormat.time(r.checkOut ?? r.checkIn);
-          return '$verb • ${r.personId} • $time';
+          return l10n.scanResultLine(verb, r.personId, time);
         }(),
       ),
     };
@@ -152,7 +154,7 @@ class _ResultBar extends StatelessWidget {
                 TextButton(
                   onPressed: () =>
                       context.read<RecordAttendanceCubit>().reset(),
-                  child: const Text('Next'),
+                  child: Text(l10n.commonNext),
                 ),
             ],
           ),

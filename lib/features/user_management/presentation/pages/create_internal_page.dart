@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/user_role.dart';
+import '../../../../core/enums/user_role_display.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../cubit/user_management_cubit.dart';
 
 /// Create a security or supervisor account. Expects a [UserManagementCubit].
@@ -47,8 +49,9 @@ class _CreateInternalPageState extends State<CreateInternalPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text('New ${widget.role.value} account')),
+      appBar: AppBar(title: Text(l10n.newRoleAccountTitle(widget.role.label(context)))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
@@ -57,14 +60,17 @@ class _CreateInternalPageState extends State<CreateInternalPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppTextField(
-                label: 'Full name',
+                label: l10n.fieldFullName,
                 controller: _name,
                 textInputAction: TextInputAction.next,
-                validator: (v) => Validators.required(v, field: 'Name'),
+                validator: (v) => Validators.required(
+                  v,
+                  message: l10n.validatorRequired(l10n.fieldName),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Email',
+                label: l10n.fieldEmail,
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
@@ -72,7 +78,7 @@ class _CreateInternalPageState extends State<CreateInternalPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Temporary password',
+                label: l10n.fieldTemporaryPassword,
                 controller: _password,
                 validator: Validators.password,
               ),
@@ -80,7 +86,7 @@ class _CreateInternalPageState extends State<CreateInternalPage> {
               BlocBuilder<UserManagementCubit, UserManagementState>(
                 buildWhen: (a, b) => a.isMutating != b.isMutating,
                 builder: (context, state) => PrimaryButton(
-                  label: 'Create account',
+                  label: l10n.createAccountButton,
                   isLoading: state.isMutating,
                   onPressed: _submit,
                 ),

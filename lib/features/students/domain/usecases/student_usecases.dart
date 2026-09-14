@@ -1,4 +1,5 @@
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/utils/validators.dart';
 import '../entities/student.dart';
 import '../repositories/student_repository.dart';
@@ -43,7 +44,13 @@ class DeleteStudent {
 
 void _validate(String fullName, String className) {
   final error =
-      Validators.required(fullName, field: 'Full name') ??
-      Validators.required(className, field: 'Class');
+      Validators.required(
+        fullName,
+        message: appStrings.validatorRequired(appStrings.fieldFullName),
+      ) ??
+      Validators.required(
+        className,
+        message: appStrings.validatorRequired(appStrings.fieldClass),
+      );
   if (error != null) throw ValidationException(error);
 }

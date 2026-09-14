@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/enums/worker_job_title.dart';
+import '../../../../core/enums/worker_job_title_display.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/worker.dart';
 import '../../domain/repositories/worker_repository.dart';
 import '../cubit/workers_cubit.dart';
@@ -64,8 +66,9 @@ class _WorkerFormPageState extends State<WorkerFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Edit worker' : 'Add worker')),
+      appBar: AppBar(title: Text(_isEdit ? l10n.editWorkerTitle : l10n.addWorkerButton)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
@@ -77,23 +80,26 @@ class _WorkerFormPageState extends State<WorkerFormPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Text(
-                    'ID ${_existing?.workerId ?? widget.existingId}',
+                    l10n.idLabel(_existing?.workerId ?? widget.existingId ?? ''),
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ),
               AppTextField(
-                label: 'Full name',
+                label: l10n.fieldFullName,
                 controller: _name,
                 textInputAction: TextInputAction.next,
-                validator: (v) => Validators.required(v, field: 'Full name'),
+                validator: (v) => Validators.required(
+                  v,
+                  message: l10n.validatorRequired(l10n.fieldFullName),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<WorkerJobTitle>(
                 initialValue: _jobTitle,
-                decoration: const InputDecoration(labelText: 'Job title'),
+                decoration: InputDecoration(labelText: l10n.fieldJobTitle),
                 items: [
                   for (final title in WorkerJobTitle.values)
-                    DropdownMenuItem(value: title, child: Text(title.label)),
+                    DropdownMenuItem(value: title, child: Text(title.label(context))),
                 ],
                 onChanged: (v) => setState(() => _jobTitle = v ?? _jobTitle),
               ),
@@ -101,7 +107,7 @@ class _WorkerFormPageState extends State<WorkerFormPage> {
               BlocBuilder<WorkersCubit, WorkersState>(
                 buildWhen: (a, b) => a.isMutating != b.isMutating,
                 builder: (context, state) => PrimaryButton(
-                  label: _isEdit ? 'Save changes' : 'Create worker',
+                  label: _isEdit ? l10n.saveChangesButton : l10n.createWorkerButton,
                   isLoading: state.isMutating,
                   onPressed: _submit,
                 ),

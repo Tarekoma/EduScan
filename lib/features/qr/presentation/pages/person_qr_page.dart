@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../widgets/person_qr_view.dart';
 
 /// Displays a single person's QR code full-screen for viewing or printing.
@@ -18,7 +19,7 @@ class PersonQrPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('QR code')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.qrCodeTitle)),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

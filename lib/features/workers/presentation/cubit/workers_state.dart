@@ -25,7 +25,7 @@ class WorkersState extends Equatable {
     return all.where((w) {
       return w.workerId.toLowerCase().contains(q) ||
           w.fullName.toLowerCase().contains(q) ||
-          w.jobTitle.label.toLowerCase().contains(q) ||
+          w.jobTitle.plainLabel.toLowerCase().contains(q) ||
           w.qrCodeId.toLowerCase().contains(q);
     }).toList();
   }

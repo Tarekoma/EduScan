@@ -1,6 +1,7 @@
 import '../../../../core/enums/attendance_state.dart';
 import '../../../../core/enums/person_type.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../attendance/domain/usecases/attendance_usecases.dart';
 import '../entities/pickup_request.dart';
 import '../repositories/pickup_repository.dart';
@@ -40,9 +41,7 @@ class RequestPickup {
     required PickupRequester requester,
   }) async {
     if (!requester.linkedStudentIds.contains(studentId)) {
-      throw const PermissionException(
-        message: 'You can only request pickup for your own child.',
-      );
+      throw PermissionException(message: appStrings.pickupOnlyOwnChild);
     }
     final record = await _getTodayRecord(
       personId: studentId,
@@ -50,13 +49,9 @@ class RequestPickup {
     );
     switch (record?.state ?? AttendanceState.absent) {
       case AttendanceState.absent:
-        throw const BusinessRuleException(
-          'Your child has not checked in yet today.',
-        );
+        throw BusinessRuleException(appStrings.pickupChildNotCheckedIn);
       case AttendanceState.left:
-        throw const BusinessRuleException(
-          'Your child has already checked out for today.',
-        );
+        throw BusinessRuleException(appStrings.pickupChildAlreadyCheckedOut);
       case AttendanceState.inside:
         break;
     }
@@ -108,8 +103,6 @@ class CancelPickup {
 
 void _assertHandler(PickupHandler handler) {
   if (!handler.canHandle) {
-    throw const PermissionException(
-      message: 'Only security may handle pickup requests.',
-    );
+    throw PermissionException(message: appStrings.pickupOnlySecurityCanHandle);
   }
 }

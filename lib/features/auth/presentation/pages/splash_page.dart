@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/corner_blobs.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Shown while [AuthCubit] resolves the initial Firebase auth state
 /// (`AuthStatus.unknown`). The router already navigates away the moment that
@@ -41,7 +42,7 @@ class SplashPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      AppConfig.tagline.toUpperCase(),
+                      AppLocalizations.of(context)!.appTagline.toUpperCase(),
                       style: textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.2,
                         color: scheme.onSurfaceVariant,

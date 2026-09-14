@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/enums/worker_job_title_display.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/time_format.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../attendance/domain/entities/attendance_record.dart';
 import '../../../attendance/presentation/attendance_status_display.dart';
 import '../../domain/entities/worker.dart';
@@ -40,7 +42,10 @@ class _DetailsView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 76,
-        title: PageHeader(title: worker.fullName, subtitle: 'Attendance history'),
+        title: PageHeader(
+          title: worker.fullName,
+          subtitle: AppLocalizations.of(context)!.attendanceHistorySubtitle,
+        ),
       ),
       body: BlocBuilder<WorkerAttendanceHistoryCubit, WorkerAttendanceHistoryState>(
         builder: (context, state) {
@@ -82,7 +87,12 @@ class _WorkerHeaderCard extends StatelessWidget {
           worker.fullName,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        subtitle: Text('${worker.workerId} • ${worker.jobTitle.label}'),
+        subtitle: Text(
+          AppLocalizations.of(context)!.personIdTypeLabel(
+            worker.workerId,
+            worker.jobTitle.label(context),
+          ),
+        ),
       ),
     );
   }
@@ -96,6 +106,7 @@ class _RangeBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<WorkerAttendanceHistoryCubit>();
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
@@ -103,9 +114,11 @@ class _RangeBar extends StatelessWidget {
             icon: const Icon(Icons.date_range, size: 18),
             label: Text(
               state.range == null
-                  ? 'All available days'
-                  : '${TimeFormat.date(state.range!.start)} – '
-                        '${TimeFormat.date(state.range!.end)}',
+                  ? l10n.allAvailableDaysLabel
+                  : l10n.dateRangeValue(
+                      TimeFormat.date(state.range!.start),
+                      TimeFormat.date(state.range!.end),
+                    ),
             ),
             onPressed: () async {
               final now = DateTime.now();
@@ -121,15 +134,15 @@ class _RangeBar extends StatelessWidget {
         ),
         if (state.range != null)
           IconButton(
-            tooltip: 'Clear filter',
+            tooltip: l10n.clearFilterTooltip,
             icon: const Icon(Icons.clear, size: 18),
             onPressed: () => cubit.setRange(null),
           ),
         if (state.status == WorkerAttendanceHistoryStatus.ready)
           Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
             child: Text(
-              '${state.presentCount} present',
+              l10n.presentCountLabel(state.presentCount),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -152,15 +165,16 @@ class _HistoryList extends StatelessWidget {
         return const LoadingView();
       case WorkerAttendanceHistoryStatus.error:
         return ErrorView(
-          message: state.errorMessage ?? 'Could not load attendance history.',
+          message: state.errorMessage ??
+              AppLocalizations.of(context)!.attendanceHistoryCouldNotLoad,
           onRetry: () =>
               context.read<WorkerAttendanceHistoryCubit>().start(workerId),
         );
       case WorkerAttendanceHistoryStatus.ready:
         final records = state.visibleRecords;
         if (records.isEmpty) {
-          return const EmptyView(
-            message: 'No attendance records found.',
+          return EmptyView(
+            message: AppLocalizations.of(context)!.noAttendanceRecordsFound,
             icon: Icons.event_busy_outlined,
           );
         }
@@ -184,11 +198,13 @@ class _HistoryTile extends StatelessWidget {
       child: ListTile(
         title: Text(TimeFormat.date(DateTime.parse(record.date))),
         subtitle: Text(
-          'In ${TimeFormat.time(record.checkIn)}   •   '
-          'Out ${TimeFormat.time(record.checkOut)}',
+          AppLocalizations.of(context)!.historyInOutSubtitle(
+            TimeFormat.time(record.checkIn),
+            TimeFormat.time(record.checkOut),
+          ),
         ),
         trailing: StatusBadge(
-          label: record.state.label,
+          label: record.state.label(context),
           tone: record.state.tone,
         ),
       ),

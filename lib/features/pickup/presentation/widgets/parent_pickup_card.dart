@@ -7,6 +7,7 @@ import '../../../../core/enums/pickup_status.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/time_format.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../students/domain/entities/student.dart';
 import '../../domain/entities/pickup_request.dart';
 import '../cubit/parent_pickup_cubit.dart';
@@ -46,13 +47,14 @@ class _CardBody extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<ParentPickupCubit>();
         final request = state.active;
+        final l10n = AppLocalizations.of(context)!;
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Pickup', style: Theme.of(context).textTheme.titleSmall),
+                Text(l10n.pickupCardTitle, style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: AppSpacing.sm),
                 if (state.status == ParentPickupStatus.loading)
                   const Center(child: CircularProgressIndicator())
@@ -61,12 +63,10 @@ class _CardBody extends StatelessWidget {
                       ? Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
-                              "Tap when you have arrived to collect your child.",
-                            ),
+                            Text(l10n.pickupTapToCollect),
                             const SizedBox(height: AppSpacing.sm),
                             PrimaryButton(
-                              label: "I'm here to pick up my child",
+                              label: l10n.pickupImHereButton,
                               icon: Icons.directions_car,
                               isLoading: state.isSubmitting,
                               onPressed: () => cubit.request(
@@ -101,10 +101,10 @@ class _NotEligibleNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final message = switch (childState) {
-      AttendanceState.absent => "Your child hasn't checked in yet today.",
-      AttendanceState.left =>
-        'Your child has already checked out for today.',
+      AttendanceState.absent => l10n.pickupChildNotCheckedIn,
+      AttendanceState.left => l10n.pickupChildAlreadyCheckedOut,
       AttendanceState.inside => '',
     };
     return Row(
@@ -132,11 +132,12 @@ class _ActiveRequest extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<ParentPickupCubit>();
     final status = request.status;
+    final l10n = AppLocalizations.of(context)!;
     final message = switch (status) {
-      PickupStatus.pending => 'Request sent — waiting for security.',
-      PickupStatus.acknowledged => 'Security has received your request.',
-      PickupStatus.completed => 'Pickup completed.',
-      PickupStatus.cancelled => 'Request cancelled.',
+      PickupStatus.pending => l10n.pickupStatusMessagePending,
+      PickupStatus.acknowledged => l10n.pickupStatusMessageAcknowledged,
+      PickupStatus.completed => l10n.pickupStatusMessageCompleted,
+      PickupStatus.cancelled => l10n.pickupStatusMessageCancelled,
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,14 +160,14 @@ class _ActiveRequest extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text('Requested ${TimeFormat.time(request.requestedAt)}'),
+        Text(l10n.pickupRequestedAt(TimeFormat.time(request.requestedAt))),
         if (status.isActive) ...[
           const SizedBox(height: AppSpacing.sm),
           Align(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerEnd,
             child: TextButton(
               onPressed: isSubmitting ? null : cubit.cancel,
-              child: const Text('Cancel request'),
+              child: Text(l10n.pickupCancelRequestButton),
             ),
           ),
         ],

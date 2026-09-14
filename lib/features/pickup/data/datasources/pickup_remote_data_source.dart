@@ -4,6 +4,7 @@ import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/enums/pickup_status.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../domain/entities/pickup_request.dart';
 import '../../domain/pickup_rules.dart';
 import '../../domain/repositories/pickup_repository.dart';
@@ -75,9 +76,7 @@ class PickupRemoteDataSource {
       await _firestore.runTransaction((tx) async {
         final ptr = await tx.get(activeRef);
         if (ptr.exists) {
-          throw const BusinessRuleException(
-            'There is already an active pickup request for this child.',
-          );
+          throw BusinessRuleException(appStrings.pickupAlreadyActive);
         }
         tx.set(
           reqRef,
@@ -114,13 +113,11 @@ class PickupRemoteDataSource {
       await _firestore.runTransaction((tx) async {
         final snap = await tx.get(reqRef);
         if (!snap.exists) {
-          throw NotFoundException('Pickup request "$requestId" not found.');
+          throw NotFoundException(appStrings.pickupRequestNotFound(requestId));
         }
         final current = PickupRequestModel.fromDoc(snap);
         if (requireParentId != null && current.parentId != requireParentId) {
-          throw const PermissionException(
-            message: 'You can only cancel your own pickup request.',
-          );
+          throw PermissionException(message: appStrings.pickupOnlyCancelOwn);
         }
         PickupRules.assertTransition(current.status, to);
         tx.update(reqRef, {PickupFields.status: to.value, ...extra});

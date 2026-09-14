@@ -2,29 +2,35 @@ import '../../../core/utils/date_key.dart';
 import '../../attendance/domain/entities/attendance_record.dart';
 import '../../students/domain/entities/student.dart';
 
-/// One row of the per-class breakdown. Rates are 0..1 fractions of
-/// `studentCount * totalDays` possible attendances in the selected range.
+/// One row of the per-class breakdown.
 class ClassAttendanceRow {
   const ClassAttendanceRow({
     required this.className,
     required this.studentCount,
+    required this.presentCount,
+    required this.absentCount,
     required this.attendanceRate,
-    required this.absenceRate,
   });
 
   final String className;
   final int studentCount;
+
+  /// Count of present/absent student-days across the selected range.
+  final int presentCount;
+  final int absentCount;
+
+  /// 0..1 fraction of possible attendances that happened — used only to size
+  /// and colour the comparison bar, never shown to the user as a number.
   final double attendanceRate;
-  final double absenceRate;
 }
 
-/// One point of the "attendance rate over time" chart: the fraction of the
-/// student roster present on that calendar day.
+/// One point of the "attendance over time" chart: how many students of the
+/// roster were present on that calendar day.
 class DailyRatePoint {
-  const DailyRatePoint({required this.date, required this.rate});
+  const DailyRatePoint({required this.date, required this.presentCount});
 
   final DateTime date;
-  final double rate;
+  final int presentCount;
 }
 
 /// Aggregate student-attendance figures for a date range. Pure and
@@ -37,7 +43,6 @@ class DailyRatePoint {
 /// [AttendanceRecord]/`AttendanceState.absent`).
 class AttendanceReportStats {
   const AttendanceReportStats({
-    required this.avgAttendanceRate,
     required this.perfectAttendanceCount,
     required this.chronicAbsenceCount,
     required this.chronicAbsenceThresholdDays,
@@ -47,16 +52,12 @@ class AttendanceReportStats {
   });
 
   const AttendanceReportStats.empty()
-    : avgAttendanceRate = 0,
-      perfectAttendanceCount = 0,
+    : perfectAttendanceCount = 0,
       chronicAbsenceCount = 0,
       chronicAbsenceThresholdDays = 0,
       totalDays = 0,
       perClass = const [],
       dailyRates = const [];
-
-  /// 0..1 fraction of possible student check-ins that happened.
-  final double avgAttendanceRate;
 
   /// Students with zero absences across the whole range.
   final int perfectAttendanceCount;
@@ -94,15 +95,6 @@ class AttendanceReportStats {
             totalDays - (presentDatesByStudent[s.studentId]?.length ?? 0),
     };
 
-    final totalPossible = students.length * totalDays;
-    final totalPresent = presentDatesByStudent.values.fold<int>(
-      0,
-      (sum, dates) => sum + dates.length,
-    );
-    final avgAttendanceRate = totalPossible == 0
-        ? 0.0
-        : totalPresent / totalPossible;
-
     final perfectAttendanceCount = absenceCountByStudent.values
         .where((a) => a == 0)
         .length;
@@ -128,8 +120,9 @@ class AttendanceReportStats {
           return ClassAttendanceRow(
             className: entry.key,
             studentCount: classStudents.length,
+            presentCount: classPresent,
+            absentCount: classPossible - classPresent,
             attendanceRate: rate,
-            absenceRate: 1 - rate,
           );
         }).toList()
           ..sort((a, b) => b.attendanceRate.compareTo(a.attendanceRate));
@@ -138,12 +131,10 @@ class AttendanceReportStats {
       final presentCount = presentDatesByStudent.values
           .where((dates) => dates.contains(key))
           .length;
-      final rate = students.isEmpty ? 0.0 : presentCount / students.length;
-      return DailyRatePoint(date: DateKey.parse(key), rate: rate);
+      return DailyRatePoint(date: DateKey.parse(key), presentCount: presentCount);
     }).toList();
 
     return AttendanceReportStats(
-      avgAttendanceRate: avgAttendanceRate,
       perfectAttendanceCount: perfectAttendanceCount,
       chronicAbsenceCount: chronicAbsenceCount,
       chronicAbsenceThresholdDays: chronicThreshold,

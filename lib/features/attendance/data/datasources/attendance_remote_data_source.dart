@@ -4,6 +4,7 @@ import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/enums/person_type.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../domain/attendance_rules.dart';
 import '../../domain/entities/attendance_record.dart';
 import '../../domain/repositories/attendance_repository.dart';
@@ -170,7 +171,7 @@ class AttendanceRemoteDataSource {
       await _firestore.runTransaction((tx) async {
         final snap = await tx.get(ref);
         if (!snap.exists) {
-          throw NotFoundException('Attendance record "$recordId" not found.');
+          throw NotFoundException(appStrings.attendanceRecordNotFound(recordId));
         }
         final current = AttendanceRecordModel.fromDoc(snap);
         final now = DateTime.now();
@@ -199,7 +200,7 @@ class AttendanceRemoteDataSource {
         );
 
         if (updates.isEmpty) {
-          throw const ValidationException('Nothing to change.');
+          throw ValidationException(appStrings.validationNothingToChange);
         }
 
         updates[AttendanceFields.updatedBy] = actor.uid;

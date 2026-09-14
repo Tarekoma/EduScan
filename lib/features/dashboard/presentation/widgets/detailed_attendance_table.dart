@@ -5,6 +5,7 @@ import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/attendance_report_stats.dart';
 
 /// Per-class attendance/absence rate breakdown. A table on tablet/desktop, a
@@ -23,10 +24,10 @@ class DetailedAttendanceTable extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SectionHeader(title: 'Detailed attendance'),
+            SectionHeader(title: AppLocalizations.of(context)!.dashboardDetailedAttendance),
             const SizedBox(height: AppSpacing.md),
             if (rows.isEmpty)
-              const EmptyView(message: 'No attendance data for this range.')
+              EmptyView(message: AppLocalizations.of(context)!.dashboardNoAttendanceForRange)
             else if (context.isMobile)
               Column(children: [for (final r in rows) _MobileRow(row: r)])
             else
@@ -38,9 +39,9 @@ class DetailedAttendanceTable extends StatelessWidget {
   }
 }
 
-BadgeTone _toneFor(double ratePct) {
-  if (ratePct >= 90) return BadgeTone.positive;
-  if (ratePct >= 75) return BadgeTone.warning;
+BadgeTone _toneFor(ClassAttendanceRow row) {
+  if (row.attendanceRate >= 0.9) return BadgeTone.positive;
+  if (row.attendanceRate >= 0.75) return BadgeTone.warning;
   return BadgeTone.negative;
 }
 
@@ -52,6 +53,7 @@ class _DesktopTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     final headerStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
       color: scheme.onSurfaceVariant,
       fontWeight: FontWeight.w600,
@@ -62,13 +64,13 @@ class _DesktopTable extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Row(
             children: [
-              Expanded(flex: 3, child: Text('CLASS', style: headerStyle)),
-              Expanded(flex: 2, child: Text('STUDENTS', style: headerStyle)),
+              Expanded(flex: 3, child: Text(l10n.tableHeaderClass, style: headerStyle)),
+              Expanded(flex: 2, child: Text(l10n.tableHeaderStudents, style: headerStyle)),
               Expanded(
                 flex: 3,
-                child: Text('ATTENDANCE RATE', style: headerStyle),
+                child: Text(l10n.tableHeaderPresentCount, style: headerStyle),
               ),
-              Expanded(flex: 3, child: Text('ABSENCE RATE', style: headerStyle)),
+              Expanded(flex: 3, child: Text(l10n.tableHeaderAbsentCount, style: headerStyle)),
             ],
           ),
         ),
@@ -86,14 +88,11 @@ class _DesktopTable extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: StatusBadge(
-                    label: '${(r.attendanceRate * 100).toStringAsFixed(1)}%',
-                    tone: _toneFor(r.attendanceRate * 100),
+                    label: '${r.presentCount}',
+                    tone: _toneFor(r),
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: Text('${(r.absenceRate * 100).toStringAsFixed(1)}%'),
-                ),
+                Expanded(flex: 3, child: Text('${r.absentCount}')),
               ],
             ),
           ),
@@ -128,15 +127,17 @@ class _MobileRow extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               StatusBadge(
-                label: '${(row.attendanceRate * 100).toStringAsFixed(1)}%',
-                tone: _toneFor(row.attendanceRate * 100),
+                label: '${row.presentCount}',
+                tone: _toneFor(row),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            '${row.studentCount} students  •  '
-            '${(row.absenceRate * 100).toStringAsFixed(1)}% absence',
+            AppLocalizations.of(context)!.dashboardStudentsAbsenceCount(
+              row.studentCount,
+              row.absentCount,
+            ),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

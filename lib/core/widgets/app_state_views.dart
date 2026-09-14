@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Full-area loading indicator.
 class LoadingView extends StatelessWidget {
@@ -52,7 +53,7 @@ class ErrorView extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(AppLocalizations.of(context)!.commonRetry),
               ),
             ],
           ],
@@ -66,11 +67,12 @@ class ErrorView extends StatelessWidget {
 class EmptyView extends StatelessWidget {
   const EmptyView({
     super.key,
-    this.message = 'Nothing here yet.',
+    this.message,
     this.icon = Icons.inbox_outlined,
   });
 
-  final String message;
+  /// Falls back to a generic "Nothing here yet." when omitted.
+  final String? message;
   final IconData icon;
 
   @override
@@ -83,7 +85,10 @@ class EmptyView extends StatelessWidget {
           children: [
             Icon(icon, size: 48, color: Theme.of(context).hintColor),
             const SizedBox(height: AppSpacing.md),
-            Text(message, textAlign: TextAlign.center),
+            Text(
+              message ?? AppLocalizations.of(context)!.commonNothingHereYet,
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),

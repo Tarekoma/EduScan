@@ -1,5 +1,6 @@
 import '../../../../core/enums/user_role.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../repositories/user_admin_repository.dart';
@@ -22,13 +23,16 @@ class CreateParentAccount {
     required List<String> studentIds,
   }) {
     final error =
-        Validators.required(name, field: 'Name') ??
+        Validators.required(
+          name,
+          message: appStrings.validatorRequired(appStrings.fieldName),
+        ) ??
         Validators.email(email) ??
         Validators.password(password) ??
         Validators.phone(phone);
     if (error != null) throw ValidationException(error);
     if (studentIds.isEmpty) {
-      throw const ValidationException('Link at least one child.');
+      throw ValidationException(appStrings.linkAtLeastOneChildSnackbar);
     }
     return _repo.createParent(
       name: name.trim(),
@@ -51,10 +55,13 @@ class CreateInternalAccount {
     required UserRole role,
   }) {
     if (!role.isInternal) {
-      throw const ValidationException('Role must be an internal role.');
+      throw ValidationException(appStrings.roleMustBeInternal);
     }
     final error =
-        Validators.required(name, field: 'Name') ??
+        Validators.required(
+          name,
+          message: appStrings.validatorRequired(appStrings.fieldName),
+        ) ??
         Validators.email(email) ??
         Validators.password(password);
     if (error != null) throw ValidationException(error);
@@ -80,9 +87,7 @@ class UpdateParentLinks {
 
   Future<void> call({required String uid, required List<String> studentIds}) {
     if (studentIds.isEmpty) {
-      throw const ValidationException(
-        'A parent must be linked to at least one child.',
-      );
+      throw ValidationException(appStrings.parentMustHaveOneChild);
     }
     return _repo.setParentLinks(uid: uid, studentIds: studentIds);
   }

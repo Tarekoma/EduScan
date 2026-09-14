@@ -1,13 +1,14 @@
 import '../../../../core/enums/person_type.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/utils/date_key.dart';
 import '../entities/attendance_record.dart';
 import '../repositories/attendance_repository.dart';
 
 void _assertAuthorised(AttendanceActor actor) {
   if (!actor.canRecord) {
-    throw const PermissionException(
-      message: 'Only security may record or correct attendance.',
+    throw PermissionException(
+      message: appStrings.attendanceOnlySecurityCanRecord,
     );
   }
 }
@@ -68,12 +69,12 @@ class UpdateAttendanceUseCase {
   }) {
     _assertAuthorised(actor);
     if (input.checkIn == null && input.checkOut == null) {
-      throw const ValidationException('Nothing to change.');
+      throw ValidationException(appStrings.validationNothingToChange);
     }
     if (input.checkIn != null &&
         input.checkOut != null &&
         input.checkOut!.isBefore(input.checkIn!)) {
-      throw const ValidationException('Check-out cannot be before check-in.');
+      throw ValidationException(appStrings.validationCheckOutBeforeCheckIn);
     }
     return _repo.correct(recordId: recordId, input: input, actor: actor);
   }

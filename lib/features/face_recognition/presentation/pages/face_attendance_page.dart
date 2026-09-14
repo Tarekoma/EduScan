@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/time_format.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../cubit/face_attendance_cubit.dart';
 
 /// Security fallback: record attendance by face when a person has no QR code.
@@ -28,8 +29,9 @@ class _FaceAttendanceView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Face recognition')),
+      appBar: AppBar(title: Text(l10n.faceRecognitionTitle)),
       body: BlocBuilder<FaceAttendanceCubit, FaceAttendanceState>(
         builder: (context, state) {
           switch (state.status) {
@@ -42,20 +44,21 @@ class _FaceAttendanceView extends StatelessWidget {
               return _MessageBody(
                 icon: Icons.check_circle,
                 title: r.action.name == 'checkIn'
-                    ? 'Checked in'
-                    : 'Checked out',
-                detail:
-                    '${r.match.personId}  •  '
-                    '${(r.match.confidence * 100).toStringAsFixed(0)}% match\n'
-                    'In ${TimeFormat.time(r.record.checkIn)}  •  '
-                    'Out ${TimeFormat.time(r.record.checkOut)}',
+                    ? l10n.checkedInTitle
+                    : l10n.checkedOutTitle,
+                detail: l10n.faceMatchDetail(
+                  r.match.personId,
+                  (r.match.confidence * 100).toStringAsFixed(0),
+                  TimeFormat.time(r.record.checkIn),
+                  TimeFormat.time(r.record.checkOut),
+                ),
                 onReset: () => context.read<FaceAttendanceCubit>().reset(),
               );
             case FaceStatus.failure:
               return _MessageBody(
                 icon: Icons.error_outline,
-                title: 'Not recorded',
-                detail: state.message ?? 'Try again or use the QR code.',
+                title: l10n.faceNotRecordedTitle,
+                detail: state.message ?? l10n.faceTryAgainOrUseQr,
                 onReset: () => context.read<FaceAttendanceCubit>().reset(),
               );
             case FaceStatus.idle:
@@ -85,14 +88,13 @@ class _UnavailableBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Face recognition is not enabled on this build.',
+              AppLocalizations.of(context)!.faceUnavailableTitle,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'Attendance continues to work with QR codes. A recognition model '
-              'can be added without changing the attendance flow.',
+            Text(
+              AppLocalizations.of(context)!.faceUnavailableDetail,
               textAlign: TextAlign.center,
             ),
           ],
@@ -107,11 +109,11 @@ class _IdleBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Text(
-          'Point the camera at the person to identify them, then confirm.',
+          AppLocalizations.of(context)!.facePointCamera,
           textAlign: TextAlign.center,
         ),
       ),
@@ -146,7 +148,7 @@ class _MessageBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Text(detail, textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.lg),
-            FilledButton(onPressed: onReset, child: const Text('Next')),
+            FilledButton(onPressed: onReset, child: Text(AppLocalizations.of(context)!.commonNext)),
           ],
         ),
       ),

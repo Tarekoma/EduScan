@@ -1,4 +1,5 @@
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/utils/validators.dart';
 import '../entities/worker.dart';
 import '../repositories/worker_repository.dart';
@@ -40,6 +41,9 @@ class DeleteWorker {
 }
 
 void _validate(String fullName) {
-  final error = Validators.required(fullName, field: 'Full name');
+  final error = Validators.required(
+    fullName,
+    message: appStrings.validatorRequired(appStrings.fieldFullName),
+  );
   if (error != null) throw ValidationException(error);
 }

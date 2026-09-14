@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/student.dart';
 import '../../domain/repositories/student_repository.dart';
 import '../cubit/students_cubit.dart';
@@ -69,8 +70,9 @@ class _StudentFormPageState extends State<StudentFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Edit student' : 'Add student')),
+      appBar: AppBar(title: Text(_isEdit ? l10n.editStudentTitle : l10n.addStudentButton)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
@@ -82,29 +84,35 @@ class _StudentFormPageState extends State<StudentFormPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Text(
-                    'ID ${_existing?.studentId ?? widget.existingId}',
+                    l10n.idLabel(_existing?.studentId ?? widget.existingId ?? ''),
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ),
               AppTextField(
-                label: 'Full name',
+                label: l10n.fieldFullName,
                 controller: _name,
                 textInputAction: TextInputAction.next,
-                validator: (v) => Validators.required(v, field: 'Full name'),
+                validator: (v) => Validators.required(
+                  v,
+                  message: l10n.validatorRequired(l10n.fieldFullName),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Class',
+                label: l10n.fieldClass,
                 controller: _className,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
-                validator: (v) => Validators.required(v, field: 'Class'),
+                validator: (v) => Validators.required(
+                  v,
+                  message: l10n.validatorRequired(l10n.fieldClass),
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               BlocBuilder<StudentsCubit, StudentsState>(
                 buildWhen: (a, b) => a.isMutating != b.isMutating,
                 builder: (context, state) => PrimaryButton(
-                  label: _isEdit ? 'Save changes' : 'Create student',
+                  label: _isEdit ? l10n.saveChangesButton : l10n.createStudentButton,
                   isLoading: state.isMutating,
                   onPressed: _submit,
                 ),

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../cubit/pickup_alert_cubit.dart';
 import '../cubit/security_pickup_cubit.dart';
 import '../widgets/pickup_request_card.dart';
@@ -38,8 +39,9 @@ class _PickupRequestsViewState extends State<_PickupRequestsView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Pickup requests')),
+      appBar: AppBar(title: Text(l10n.pickupRequestsTitle)),
       body: BlocConsumer<SecurityPickupCubit, SecurityPickupState>(
         listenWhen: (a, b) =>
             a.actionError != b.actionError && b.actionError != null,
@@ -55,14 +57,13 @@ class _PickupRequestsViewState extends State<_PickupRequestsView> {
               return const LoadingView();
             case PickupQueueStatus.error:
               return ErrorView(
-                message:
-                    state.errorMessage ?? 'Could not load pickup requests.',
+                message: state.errorMessage ?? l10n.pickupCouldNotLoad,
                 onRetry: () => context.read<SecurityPickupCubit>().start(),
               );
             case PickupQueueStatus.ready:
               if (state.requests.isEmpty) {
-                return const EmptyView(
-                  message: 'No active pickup requests.',
+                return EmptyView(
+                  message: l10n.pickupNoActiveRequests,
                   icon: Icons.directions_car_outlined,
                 );
               }
@@ -80,20 +81,18 @@ class _PickupRequestsViewState extends State<_PickupRequestsView> {
                     onComplete: () async {
                       final ok = await showConfirmDialog(
                         context,
-                        title: 'Complete pickup',
-                        message:
-                            'Confirm ${r.studentName} has been collected by ${r.parentName}?',
-                        confirmLabel: 'Complete',
+                        title: l10n.pickupCompleteDialogTitle,
+                        message: l10n.pickupCompleteDialogMessage(r.studentName, r.parentName),
+                        confirmLabel: l10n.pickupCompleteButton,
                       );
                       if (ok) cubit.complete(r.requestId);
                     },
                     onCancel: () async {
                       final ok = await showConfirmDialog(
                         context,
-                        title: 'Cancel request',
-                        message:
-                            'Cancel the pickup request for ${r.studentName}?',
-                        confirmLabel: 'Cancel request',
+                        title: l10n.pickupCancelDialogTitle,
+                        message: l10n.pickupCancelDialogMessage(r.studentName),
+                        confirmLabel: l10n.pickupCancelRequestButton,
                         destructive: true,
                       );
                       if (ok) cubit.cancel(r.requestId);

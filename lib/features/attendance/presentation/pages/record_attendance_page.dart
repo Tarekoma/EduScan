@@ -5,18 +5,21 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_config.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/routing/app_routes.dart';
-import '../../../../core/enums/attendance_state.dart';
 import '../../../../core/enums/person_type.dart';
+import '../../../../core/enums/person_type_display.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/person_id.dart';
 import '../../../../core/utils/time_format.dart';
+import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/sign_out_button.dart';
 import '../../../../core/widgets/theme_toggle_button.dart';
 import '../../../../core/utils/responsive.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../pickup/presentation/cubit/pickup_alert_cubit.dart';
 import '../../domain/attendance_rules.dart';
+import '../attendance_status_display.dart';
 import '../cubit/record_attendance_cubit.dart';
 
 /// Security screen for recording attendance. QR scanning (Phase 6) will feed
@@ -67,13 +70,14 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
           b.lastNewRequest != null && a.lastNewRequest != b.lastNewRequest,
       listener: (context, state) {
         final req = state.lastNewRequest!;
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
-              content: Text('New pickup request: ${req.studentName}'),
+              content: Text(l10n.newPickupRequestSnackbar(req.studentName)),
               action: SnackBarAction(
-                label: 'View',
+                label: l10n.commonView,
                 onPressed: () => context.push(AppRoutes.securityPickup),
               ),
               duration: const Duration(seconds: 6),
@@ -86,18 +90,19 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
   }
 
   Widget _buildScaffold(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 76,
-        title: const PageHeader(
-          title: 'Record attendance',
-          subtitle: 'Scan or enter an ID',
+        title: PageHeader(
+          title: l10n.recordAttendanceTitle,
+          subtitle: l10n.recordAttendanceSubtitle,
         ),
         actions: [
           if (AppConfig.pickupEnabled)
             BlocBuilder<PickupAlertCubit, PickupAlertState>(
               builder: (context, alert) => IconButton(
-                tooltip: 'Pickup requests',
+                tooltip: l10n.pickupRequestsTitle,
                 icon: Badge(
                   isLabelVisible: alert.pendingCount > 0,
                   label: Text('${alert.pendingCount}'),
@@ -108,6 +113,7 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
             ),
           if (context.isMobile) ...[
             const ThemeToggleButton(),
+            const LocaleToggleButton(),
             const SignOutButton(),
           ],
         ],
@@ -120,35 +126,35 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
             FilledButton.tonalIcon(
               onPressed: () => context.push(AppRoutes.securityScan),
               icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Scan QR code'),
+              label: Text(l10n.scanQrCodeButton),
             ),
             if (AppConfig.faceRecognitionEnabled) ...[
               const SizedBox(height: AppSpacing.sm),
               OutlinedButton.icon(
                 onPressed: () => context.push(AppRoutes.securityFace),
                 icon: const Icon(Icons.face),
-                label: const Text('Use face recognition'),
+                label: Text(l10n.useFaceRecognitionButton),
               ),
             ],
             const SizedBox(height: AppSpacing.md),
             const Divider(),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Or enter an ID manually',
+              l10n.enterIdManually,
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: AppSpacing.sm),
             SegmentedButton<PersonType>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: PersonType.student,
-                  label: Text('Student'),
-                  icon: Icon(Icons.school_outlined),
+                  label: Text(l10n.personTypeStudent),
+                  icon: const Icon(Icons.school_outlined),
                 ),
                 ButtonSegment(
                   value: PersonType.worker,
-                  label: Text('Worker'),
-                  icon: Icon(Icons.badge_outlined),
+                  label: Text(l10n.personTypeWorker),
+                  icon: const Icon(Icons.badge_outlined),
                 ),
               ],
               selected: {_type},
@@ -166,9 +172,9 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
                 ),
                 validator: (v) {
                   final value = (v ?? '').trim().toUpperCase();
-                  if (value.isEmpty) return 'Enter an ID.';
+                  if (value.isEmpty) return l10n.validatorEnterId;
                   if (!PersonId.isValid(value, _type)) {
-                    return 'ID must look like ${_type.qrPrefix}_00125.';
+                    return l10n.validatorIdFormat(_type.qrPrefix);
                   }
                   return null;
                 },
@@ -186,7 +192,7 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     PrimaryButton(
-                      label: 'Scan / record',
+                      label: l10n.scanRecordButton,
                       isLoading: state.isSubmitting,
                       onPressed: _submit,
                     ),
@@ -199,7 +205,7 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
                                 ? null
                                 : () =>
                                       _submit(action: AttendanceAction.checkIn),
-                            child: const Text('Force check-in'),
+                            child: Text(l10n.forceCheckInButton),
                           ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
@@ -210,7 +216,7 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
                                 : () => _submit(
                                     action: AttendanceAction.checkOut,
                                   ),
-                            child: const Text('Force check-out'),
+                            child: Text(l10n.forceCheckOutButton),
                           ),
                         ),
                       ],
@@ -236,6 +242,7 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     switch (state.status) {
       case RecordStatus.idle:
       case RecordStatus.submitting:
@@ -246,7 +253,7 @@ class _ResultCard extends StatelessWidget {
           child: ListTile(
             leading: Icon(Icons.error_outline, color: scheme.onErrorContainer),
             title: Text(
-              state.message ?? 'Could not record attendance.',
+              state.message ?? l10n.couldNotRecordAttendance,
               style: TextStyle(color: scheme.onErrorContainer),
             ),
           ),
@@ -269,26 +276,20 @@ class _ResultCard extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      isIn ? 'Checked in' : 'Checked out',
+                      isIn ? l10n.checkedInTitle : l10n.checkedOutTitle,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text('${r.personId} • ${r.personType.value}'),
-                Text('Check-in: ${TimeFormat.time(r.checkIn)}'),
-                Text('Check-out: ${TimeFormat.time(r.checkOut)}'),
-                Text('Status: ${_stateLabel(r.state)}'),
+                Text(l10n.personIdTypeLabel(r.personId, r.personType.label(context))),
+                Text(l10n.attendanceCheckInAt(TimeFormat.time(r.checkIn))),
+                Text(l10n.attendanceCheckOutAt(TimeFormat.time(r.checkOut))),
+                Text(l10n.attendanceStatusLabel(r.state.label(context))),
               ],
             ),
           ),
         );
     }
   }
-
-  String _stateLabel(AttendanceState s) => switch (s) {
-    AttendanceState.absent => 'Absent',
-    AttendanceState.inside => 'Inside',
-    AttendanceState.left => 'Left',
-  };
 }

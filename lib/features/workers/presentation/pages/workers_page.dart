@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/enums/worker_job_title_display.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/app_search_bar.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
+import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/sign_out_button.dart';
 import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../qr/presentation/pages/person_qr_page.dart';
 import '../../domain/entities/worker.dart';
 import '../cubit/workers_cubit.dart';
@@ -39,18 +42,18 @@ class _WorkersView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 76,
         title: PageHeader(
-          title: 'Workers',
-          subtitle: readOnly
-              ? 'View staff records and QR codes'
-              : 'Manage staff records and QR codes',
+          title: l10n.workersPageTitle,
+          subtitle: readOnly ? l10n.workersViewSubtitle : l10n.workersManageSubtitle,
         ),
         actions: [
           if (context.isMobile) ...[
             const ThemeToggleButton(),
+            const LocaleToggleButton(),
             const SignOutButton(),
           ],
         ],
@@ -60,7 +63,7 @@ class _WorkersView extends StatelessWidget {
           : FloatingActionButton.extended(
               onPressed: () => _openForm(context),
               icon: const Icon(Icons.add),
-              label: const Text('Add worker'),
+              label: Text(l10n.addWorkerButton),
             ),
       body: BlocConsumer<WorkersCubit, WorkersState>(
         listenWhen: (a, b) =>
@@ -78,12 +81,12 @@ class _WorkersView extends StatelessWidget {
               children: [
                 if (state.all.isNotEmpty)
                   Text(
-                    '${state.all.length} worker${state.all.length == 1 ? '' : 's'}',
+                    l10n.workersCount(state.all.length),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 const SizedBox(height: AppSpacing.sm),
                 AppSearchBar(
-                  hintText: 'Search by name, ID or job title',
+                  hintText: l10n.searchWorkersHint,
                   onChanged: context.read<WorkersCubit>().search,
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -97,22 +100,23 @@ class _WorkersView extends StatelessWidget {
   }
 
   Widget _buildList(BuildContext context, WorkersState state) {
+    final l10n = AppLocalizations.of(context)!;
     switch (state.status) {
       case WorkersStatus.initial:
       case WorkersStatus.loading:
         return const LoadingView();
       case WorkersStatus.error:
         return ErrorView(
-          message: state.errorMessage ?? 'Could not load workers.',
+          message: state.errorMessage ?? l10n.workersCouldNotLoad,
           onRetry: () => context.read<WorkersCubit>().start(),
         );
       case WorkersStatus.ready:
         if (state.all.isEmpty) {
-          return const EmptyView(message: 'No workers yet.');
+          return EmptyView(message: l10n.workersNoneYet);
         }
         final workers = state.filtered;
         if (workers.isEmpty) {
-          return const EmptyView(message: 'No workers match your search.');
+          return EmptyView(message: l10n.workersNoneMatchSearch);
         }
         return context.isMobile
             ? ListView.separated(
@@ -139,7 +143,8 @@ class _WorkersView extends StatelessWidget {
     }
   }
 
-  static String _subtitle(Worker w) => '${w.workerId} • ${w.jobTitle.label}';
+  static String _subtitle(BuildContext context, Worker w) =>
+      '${w.workerId} • ${w.jobTitle.label(context)}';
 
   void _openDetails(BuildContext context, Worker worker) =>
       Navigator.of(context).push(
@@ -153,7 +158,7 @@ class _WorkersView extends StatelessWidget {
       builder: (_) => PersonQrPage(
         value: worker.qrCodeId,
         title: worker.fullName,
-        subtitle: _subtitle(worker),
+        subtitle: _subtitle(context, worker),
       ),
     ),
   );
@@ -175,11 +180,12 @@ class _WorkersView extends StatelessWidget {
     String id,
     String name,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final ok = await showConfirmDialog(
       context,
-      title: 'Delete worker',
-      message: 'Delete "$name" ($id)? This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: l10n.deleteWorkerDialogTitle,
+      message: l10n.deleteConfirmMessage(name, id),
+      confirmLabel: l10n.commonDelete,
       destructive: true,
     );
     if (ok && context.mounted) {
@@ -205,20 +211,21 @@ class _WorkerActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          tooltip: 'Show QR',
+          tooltip: l10n.showQrTooltip,
           icon: const Icon(Icons.qr_code_2),
           onPressed: onShowQr,
         ),
         if (!readOnly)
           PopupMenuButton<String>(
             onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'edit', child: Text(l10n.commonEdit)),
+              PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
             ],
           ),
       ],
@@ -250,7 +257,7 @@ class _WorkerCard extends StatelessWidget {
         onTap: onTap,
         leading: const CircleAvatar(child: Icon(Icons.badge_outlined)),
         title: Text(worker.fullName),
-        subtitle: Text(_WorkersView._subtitle(worker)),
+        subtitle: Text(_WorkersView._subtitle(context, worker)),
         trailing: _WorkerActions(
           worker: worker,
           readOnly: readOnly,
@@ -283,6 +290,7 @@ class _WorkersTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     final headerStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
       color: scheme.onSurfaceVariant,
       fontWeight: FontWeight.w600,
@@ -298,9 +306,9 @@ class _WorkersTable extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Expanded(flex: 3, child: Text('STAFF', style: headerStyle)),
-                Expanded(flex: 2, child: Text('WORKER ID', style: headerStyle)),
-                Expanded(flex: 2, child: Text('JOB TITLE', style: headerStyle)),
+                Expanded(flex: 3, child: Text(l10n.tableHeaderStaff, style: headerStyle)),
+                Expanded(flex: 2, child: Text(l10n.tableHeaderWorkerId, style: headerStyle)),
+                Expanded(flex: 2, child: Text(l10n.tableHeaderJobTitle, style: headerStyle)),
                 const SizedBox(width: 96),
               ],
             ),
@@ -337,11 +345,11 @@ class _WorkersTable extends StatelessWidget {
                           ),
                         ),
                         Expanded(flex: 2, child: Text(w.workerId)),
-                        Expanded(flex: 2, child: Text(w.jobTitle.label)),
+                        Expanded(flex: 2, child: Text(w.jobTitle.label(context))),
                         SizedBox(
                           width: 96,
                           child: Align(
-                            alignment: Alignment.centerRight,
+                            alignment: AlignmentDirectional.centerEnd,
                             child: _WorkerActions(
                               worker: w,
                               readOnly: readOnly,

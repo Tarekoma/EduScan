@@ -1,5 +1,7 @@
 import '../../../../core/enums/person_type.dart';
+import '../../../../core/enums/worker_job_title_display.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../students/domain/repositories/student_repository.dart';
 import '../../../workers/domain/repositories/worker_repository.dart';
 import '../entities/resolved_person.dart';
@@ -21,12 +23,12 @@ class ResolvePerson {
   Future<ResolvedPerson> call(String rawPayload) async {
     final payload = rawPayload.trim().toUpperCase();
     if (payload.isEmpty) {
-      throw const ValidationException('Empty QR code.');
+      throw ValidationException(appStrings.qrEmptyCode);
     }
 
     final type = PersonType.fromQrCode(payload);
     if (type == null) {
-      throw const ValidationException('Unrecognised QR code.');
+      throw ValidationException(appStrings.qrUnrecognisedCode);
     }
 
     switch (type) {
@@ -36,7 +38,7 @@ class ResolvePerson {
           personId: s.studentId,
           personType: PersonType.student,
           displayName: s.fullName,
-          subtitle: 'Class ${s.className}',
+          subtitle: appStrings.personClassLabel(s.className),
         );
       case PersonType.worker:
         final w = await _workers.getWorker(payload);
@@ -44,7 +46,7 @@ class ResolvePerson {
           personId: w.workerId,
           personType: PersonType.worker,
           displayName: w.fullName,
-          subtitle: w.jobTitle.label,
+          subtitle: w.jobTitle.plainLabel,
         );
     }
   }

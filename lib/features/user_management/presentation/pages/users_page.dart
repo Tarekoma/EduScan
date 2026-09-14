@@ -3,12 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
 import '../../../../core/enums/user_role.dart';
+import '../../../../core/enums/user_role_display.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
+import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/sign_out_button.dart';
 import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../cubit/user_management_cubit.dart';
 import 'create_internal_page.dart';
@@ -21,26 +24,28 @@ class UsersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 76,
-          title: const PageHeader(
-            title: 'Users',
-            subtitle: 'Manage parent and staff accounts',
+          title: PageHeader(
+            title: l10n.usersTitle,
+            subtitle: l10n.usersSubtitle,
           ),
           actions: [
             if (context.isMobile) ...[
               const ThemeToggleButton(),
+              const LocaleToggleButton(),
               const SignOutButton(),
             ],
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Parents'),
-              Tab(text: 'Security'),
-              Tab(text: 'Supervisors'),
+              Tab(text: l10n.tabParents),
+              Tab(text: l10n.tabSecurity),
+              Tab(text: l10n.tabSupervisors),
             ],
           ),
         ),
@@ -77,11 +82,12 @@ class _RoleTabView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _create(context),
         icon: const Icon(Icons.person_add_alt),
-        label: Text('Add ${role.value}'),
+        label: Text(l10n.addRoleButton(role.label(context))),
       ),
       body: BlocConsumer<UserManagementCubit, UserManagementState>(
         listenWhen: (a, b) =>
@@ -98,12 +104,12 @@ class _RoleTabView extends StatelessWidget {
               return const LoadingView();
             case UsersStatus.error:
               return ErrorView(
-                message: state.errorMessage ?? 'Could not load users.',
+                message: state.errorMessage ?? l10n.usersCouldNotLoad,
                 onRetry: () => context.read<UserManagementCubit>().start(role),
               );
             case UsersStatus.ready:
               if (state.users.isEmpty) {
-                return EmptyView(message: 'No ${role.value} accounts yet.');
+                return EmptyView(message: l10n.noRoleAccountsYet(role.label(context)));
               }
               return ListView.separated(
                 itemCount: state.users.length,
@@ -141,6 +147,7 @@ class _UserTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<UserManagementCubit>();
+    final l10n = AppLocalizations.of(context)!;
     return ListTile(
       title: Text(user.name),
       subtitle: Column(
@@ -150,8 +157,8 @@ class _UserTile extends StatelessWidget {
           if (role == UserRole.parent)
             Text(
               user.studentIds.isEmpty
-                  ? 'No children linked'
-                  : 'Children: ${user.studentIds.join(', ')}',
+                  ? l10n.userNoChildrenLinked
+                  : l10n.userChildrenLinked(user.studentIds.join(', ')),
               style: Theme.of(context).textTheme.bodySmall,
             ),
         ],
@@ -177,9 +184,9 @@ class _UserTile extends StatelessWidget {
               } else if (v == 'delete') {
                 final ok = await showConfirmDialog(
                   context,
-                  title: 'Delete account',
-                  message: 'Permanently delete ${user.name}?',
-                  confirmLabel: 'Delete',
+                  title: l10n.deleteAccountDialogTitle,
+                  message: l10n.deleteAccountMessage(user.name),
+                  confirmLabel: l10n.commonDelete,
                   destructive: true,
                 );
                 if (ok) cubit.deleteUser(user.uid, role);
@@ -187,11 +194,11 @@ class _UserTile extends StatelessWidget {
             },
             itemBuilder: (_) => [
               if (role == UserRole.parent)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'links',
-                  child: Text('Edit linked children'),
+                  child: Text(l10n.editLinkedChildrenMenuItem),
                 ),
-              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+              PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
             ],
           ),
         ],

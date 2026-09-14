@@ -9,6 +9,7 @@ import '../../../core/enums/person_type.dart';
 import '../../../core/enums/user_role.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../../../core/utils/date_key.dart';
 import '../../../core/utils/person_id.dart';
 import '../../attendance/data/models/attendance_record_model.dart';
@@ -105,7 +106,7 @@ class ExcelRepositoryImpl implements ExcelRepository {
 
   String get _managerUid {
     final uid = _auth.currentUser?.uid;
-    if (uid == null) throw const AuthException('Please sign in again.');
+    if (uid == null) throw AuthException(appStrings.errorPleaseSignInAgain);
     return uid;
   }
 
@@ -173,7 +174,7 @@ class ExcelRepositoryImpl implements ExcelRepository {
           final checkOut = _timestampOrNull(row.date, row.checkOut);
           if (checkIn == null && checkOut != null) {
             throw ValidationException(
-              'Row for $personId on ${row.date}: check-out without check-in.',
+              appStrings.excelCheckoutWithoutCheckin(personId, row.date),
             );
           }
 
@@ -217,13 +218,13 @@ class ExcelRepositoryImpl implements ExcelRepository {
     if (hhmm == null || hhmm.trim().isEmpty) return null;
     final m = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(hhmm.trim());
     if (m == null) {
-      throw ValidationException('Bad time "$hhmm" (expected HH:mm).');
+      throw ValidationException(appStrings.excelBadTime(hhmm));
     }
     final parsed = DateTime.tryParse(
       '${dateKey}T${m.group(1)!.padLeft(2, '0')}:${m.group(2)}:00',
     );
     if (parsed == null) {
-      throw ValidationException('Bad date/time "$dateKey $hhmm".');
+      throw ValidationException(appStrings.excelBadDateTime(dateKey, hhmm));
     }
     return Timestamp.fromDate(parsed);
   }

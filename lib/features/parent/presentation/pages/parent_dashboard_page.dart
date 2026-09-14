@@ -9,6 +9,7 @@ import '../../../../core/utils/time_format.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../attendance/domain/entities/attendance_record.dart';
 import '../../../attendance/presentation/attendance_status_display.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
@@ -32,13 +33,14 @@ class _ParentDashboardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 76,
-        title: const PageHeader(title: 'My children'),
+        title: PageHeader(title: l10n.parentMyChildrenTitle),
         actions: [
           IconButton(
-            tooltip: 'Sign out',
+            tooltip: l10n.commonSignOut,
             icon: const Icon(Icons.logout),
             onPressed: () => context.read<AuthCubit>().signOut(),
           ),
@@ -51,15 +53,13 @@ class _ParentDashboardView extends StatelessWidget {
             case ParentStatus.loading:
               return const LoadingView();
             case ParentStatus.empty:
-              return const EmptyView(
-                message:
-                    'No children are linked to your account yet.\n'
-                    'Please contact the school office.',
+              return EmptyView(
+                message: l10n.parentNoChildrenLinked,
                 icon: Icons.family_restroom,
               );
             case ParentStatus.error:
               return ErrorView(
-                message: state.errorMessage ?? 'Could not load your children.',
+                message: state.errorMessage ?? l10n.parentCouldNotLoadChildren,
                 onRetry: () => context.read<ParentDashboardCubit>().start(),
               );
             case ParentStatus.ready:
@@ -104,7 +104,12 @@ class _ReadyBody extends StatelessWidget {
                 child.fullName,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              subtitle: Text('${child.studentId} • Class ${child.className}'),
+              subtitle: Text(
+                AppLocalizations.of(context)!.personIdTypeLabel(
+                  child.studentId,
+                  AppLocalizations.of(context)!.personClassLabel(child.className),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -141,6 +146,7 @@ class _TodayCard extends StatelessWidget {
     }
     final record = state.today;
     final attendanceState = record?.state ?? AttendanceState.absent;
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -151,18 +157,18 @@ class _TodayCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Today's attendance",
+                  l10n.sectionTodayAttendance,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 StatusBadge(
-                  label: attendanceState.label,
+                  label: attendanceState.label(context),
                   tone: attendanceState.tone,
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            _timeRow('Check-in', TimeFormat.time(record?.checkIn)),
-            _timeRow('Check-out', TimeFormat.time(record?.checkOut)),
+            _timeRow(l10n.checkInLabel, TimeFormat.time(record?.checkIn)),
+            _timeRow(l10n.checkOutLabel, TimeFormat.time(record?.checkOut)),
           ],
         ),
       ),
@@ -187,20 +193,23 @@ class _HistorySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<ParentDashboardCubit>();
     final records = state.visibleHistory;
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('History', style: Theme.of(context).textTheme.titleSmall),
+            Text(l10n.sectionHistory, style: Theme.of(context).textTheme.titleSmall),
             TextButton.icon(
               icon: const Icon(Icons.date_range, size: 18),
               label: Text(
                 state.historyRange == null
-                    ? 'Filter'
-                    : '${TimeFormat.date(state.historyRange!.start)} – '
-                          '${TimeFormat.date(state.historyRange!.end)}',
+                    ? l10n.filterButton
+                    : l10n.dateRangeValue(
+                        TimeFormat.date(state.historyRange!.start),
+                        TimeFormat.date(state.historyRange!.end),
+                      ),
               ),
               onPressed: () async {
                 final now = DateTime.now();
@@ -226,10 +235,10 @@ class _HistorySection extends StatelessWidget {
             child: Center(child: CircularProgressIndicator()),
           )
         else if (records.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(AppSpacing.lg),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Center(
-              child: Text('No attendance records for this period.'),
+              child: Text(l10n.parentNoRecordsForPeriod),
             ),
           )
         else
@@ -250,11 +259,13 @@ class _HistoryTile extends StatelessWidget {
       child: ListTile(
         title: Text(record.date),
         subtitle: Text(
-          'In ${TimeFormat.time(record.checkIn)}   •   '
-          'Out ${TimeFormat.time(record.checkOut)}',
+          AppLocalizations.of(context)!.historyInOutSubtitle(
+            TimeFormat.time(record.checkIn),
+            TimeFormat.time(record.checkOut),
+          ),
         ),
         trailing: StatusBadge(
-          label: record.state.label,
+          label: record.state.label(context),
           tone: record.state.tone,
         ),
       ),

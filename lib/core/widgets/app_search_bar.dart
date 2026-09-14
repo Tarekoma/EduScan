@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Reusable debounced search field. Emits trimmed query text.
 class AppSearchBar extends StatefulWidget {
   const AppSearchBar({
     super.key,
     required this.onChanged,
-    this.hintText = 'Search',
+    this.hintText,
     this.debounce = const Duration(milliseconds: 300),
   });
 
   final ValueChanged<String> onChanged;
-  final String hintText;
+
+  /// Falls back to a generic "Search" hint when omitted.
+  final String? hintText;
   final Duration debounce;
 
   @override
@@ -45,7 +48,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
         controller: _controller,
         onChanged: _onChanged,
         decoration: InputDecoration(
-          hintText: widget.hintText,
+          hintText: widget.hintText ?? AppLocalizations.of(context)!.commonSearch,
           prefixIcon: const Icon(Icons.search),
           suffixIcon: _controller.text.isEmpty
               ? null

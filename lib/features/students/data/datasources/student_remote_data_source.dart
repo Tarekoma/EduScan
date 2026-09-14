@@ -4,6 +4,7 @@ import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/enums/person_type.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/utils/person_id.dart';
 import '../../domain/entities/student.dart';
 import '../../domain/repositories/student_repository.dart';
@@ -32,7 +33,7 @@ class StudentRemoteDataSource {
     try {
       final doc = await _col.doc(studentId).get();
       if (!doc.exists) {
-        throw NotFoundException('Student "$studentId" was not found.');
+        throw NotFoundException(appStrings.studentNotFound(studentId));
       }
       return StudentModel.fromDoc(doc);
     } catch (e, s) {

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../../../core/l10n/app_strings.dart';
 import 'entities/face_embedding.dart';
 
 /// A single captured frame handed to the recognizer.
@@ -35,14 +36,14 @@ abstract interface class FaceRecognizer {
 }
 
 class FaceRecognitionUnavailable implements Exception {
-  const FaceRecognitionUnavailable([
-    this.message = 'Face recognition is not enabled on this build.',
-  ]);
+  FaceRecognitionUnavailable([String? message])
+    : message = message ?? appStrings.faceUnavailableTitle;
   final String message;
 }
 
 class NoFaceDetected implements Exception {
-  const NoFaceDetected([this.message = 'No face detected. Try again.']);
+  NoFaceDetected([String? message])
+    : message = message ?? appStrings.faceNotDetected;
   final String message;
 }
 
@@ -56,5 +57,5 @@ class UnavailableFaceRecognizer implements FaceRecognizer {
 
   @override
   Future<FaceEmbedding> extract(FaceImageInput input) async =>
-      throw const FaceRecognitionUnavailable();
+      throw FaceRecognitionUnavailable();
 }

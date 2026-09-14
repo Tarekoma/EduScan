@@ -7,9 +7,11 @@ import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/app_search_bar.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
+import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/sign_out_button.dart';
 import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../qr/presentation/pages/person_qr_page.dart';
 import '../../domain/entities/student.dart';
 import '../cubit/students_cubit.dart';
@@ -38,18 +40,18 @@ class _StudentsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 76,
         title: PageHeader(
-          title: 'Students',
-          subtitle: readOnly
-              ? 'View student records and QR codes'
-              : 'Manage student records and QR codes',
+          title: l10n.studentsPageTitle,
+          subtitle: readOnly ? l10n.studentsViewSubtitle : l10n.studentsManageSubtitle,
         ),
         actions: [
           if (context.isMobile) ...[
             const ThemeToggleButton(),
+            const LocaleToggleButton(),
             const SignOutButton(),
           ],
         ],
@@ -59,7 +61,7 @@ class _StudentsView extends StatelessWidget {
           : FloatingActionButton.extended(
               onPressed: () => _openForm(context),
               icon: const Icon(Icons.add),
-              label: const Text('Add student'),
+              label: Text(l10n.addStudentButton),
             ),
       body: BlocConsumer<StudentsCubit, StudentsState>(
         listenWhen: (a, b) =>
@@ -77,7 +79,7 @@ class _StudentsView extends StatelessWidget {
               children: [
                 if (state.all.isNotEmpty)
                   Text(
-                    '${state.all.length} student${state.all.length == 1 ? '' : 's'}',
+                    l10n.studentsCount(state.all.length),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 const SizedBox(height: AppSpacing.sm),
@@ -93,22 +95,23 @@ class _StudentsView extends StatelessWidget {
   }
 
   Widget _buildList(BuildContext context, StudentsState state) {
+    final l10n = AppLocalizations.of(context)!;
     switch (state.status) {
       case StudentsStatus.initial:
       case StudentsStatus.loading:
         return const LoadingView();
       case StudentsStatus.error:
         return ErrorView(
-          message: state.errorMessage ?? 'Could not load students.',
+          message: state.errorMessage ?? l10n.studentsCouldNotLoad,
           onRetry: () => context.read<StudentsCubit>().start(),
         );
       case StudentsStatus.ready:
         if (state.all.isEmpty) {
-          return const EmptyView(message: 'No students yet.');
+          return EmptyView(message: l10n.studentsNoneYet);
         }
         final students = state.filtered;
         if (students.isEmpty) {
-          return const EmptyView(message: 'No students match your search.');
+          return EmptyView(message: l10n.studentsNoneMatchSearch);
         }
         return context.isMobile
             ? ListView.separated(
@@ -142,15 +145,21 @@ class _StudentsView extends StatelessWidget {
         ),
       );
 
-  void _showQr(BuildContext context, Student student) => Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => PersonQrPage(
-        value: student.qrCodeId,
-        title: student.fullName,
-        subtitle: '${student.studentId} • Class ${student.className}',
+  void _showQr(BuildContext context, Student student) {
+    final l10n = AppLocalizations.of(context)!;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PersonQrPage(
+          value: student.qrCodeId,
+          title: student.fullName,
+          subtitle: l10n.personIdTypeLabel(
+            student.studentId,
+            l10n.personClassLabel(student.className),
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Future<void> _openForm(BuildContext context, {String? existingId}) {
     final cubit = context.read<StudentsCubit>();
@@ -169,11 +178,12 @@ class _StudentsView extends StatelessWidget {
     String id,
     String name,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final ok = await showConfirmDialog(
       context,
-      title: 'Delete student',
-      message: 'Delete "$name" ($id)? This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: l10n.deleteStudentDialogTitle,
+      message: l10n.deleteConfirmMessage(name, id),
+      confirmLabel: l10n.commonDelete,
       destructive: true,
     );
     if (ok && context.mounted) {
@@ -190,21 +200,22 @@ class _FilterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<StudentsCubit>();
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Expanded(
           child: AppSearchBar(
-            hintText: 'Search by name, ID or class',
+            hintText: l10n.searchStudentsHint,
             onChanged: cubit.search,
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
         DropdownMenu<String?>(
           initialSelection: state.classFilter,
-          hintText: 'All classes',
+          hintText: l10n.allClassesLabel,
           onSelected: cubit.filterByClass,
           dropdownMenuEntries: [
-            const DropdownMenuEntry(value: null, label: 'All classes'),
+            DropdownMenuEntry(value: null, label: l10n.allClassesLabel),
             for (final c in state.classNames) DropdownMenuEntry(value: c, label: c),
           ],
         ),
@@ -239,6 +250,7 @@ class _StudentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: ListTile(
         onTap: onTap,
@@ -248,23 +260,23 @@ class _StudentCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(student.studentId),
-            Text('Class ${student.className}'),
+            Text(l10n.personClassLabel(student.className)),
           ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              tooltip: 'Show QR',
+              tooltip: l10n.showQrTooltip,
               icon: const Icon(Icons.qr_code_2),
               onPressed: onShowQr,
             ),
             if (!readOnly)
               PopupMenuButton<String>(
                 onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'edit', child: Text(l10n.commonEdit)),
+                  PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
                 ],
               ),
           ],
@@ -294,6 +306,7 @@ class _StudentsTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     final headerStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
       color: scheme.onSurfaceVariant,
       fontWeight: FontWeight.w600,
@@ -309,9 +322,9 @@ class _StudentsTable extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Expanded(flex: 3, child: Text('STUDENT', style: headerStyle)),
-                Expanded(flex: 2, child: Text('STUDENT ID', style: headerStyle)),
-                Expanded(flex: 2, child: Text('CLASS', style: headerStyle)),
+                Expanded(flex: 3, child: Text(l10n.tableHeaderStudent, style: headerStyle)),
+                Expanded(flex: 2, child: Text(l10n.tableHeaderStudentId, style: headerStyle)),
+                Expanded(flex: 2, child: Text(l10n.tableHeaderClass, style: headerStyle)),
                 const SizedBox(width: 96),
               ],
             ),
@@ -361,7 +374,7 @@ class _StudentsTable extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               IconButton(
-                                tooltip: 'Show QR',
+                                tooltip: l10n.showQrTooltip,
                                 icon: const Icon(Icons.qr_code_2),
                                 onPressed: () => onShowQr(s),
                               ),
@@ -369,9 +382,9 @@ class _StudentsTable extends StatelessWidget {
                                 PopupMenuButton<String>(
                                   onSelected: (v) =>
                                       v == 'edit' ? onEdit(s) : onDelete(s),
-                                  itemBuilder: (_) => const [
-                                    PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                    PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                  itemBuilder: (_) => [
+                                    PopupMenuItem(value: 'edit', child: Text(l10n.commonEdit)),
+                                    PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
                                   ],
                                 ),
                             ],

@@ -1,5 +1,6 @@
 import '../../../../core/enums/person_type.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../attendance/domain/attendance_rules.dart';
 import '../../../attendance/domain/entities/attendance_record.dart';
 import '../../../attendance/domain/repositories/attendance_repository.dart';
@@ -34,9 +35,7 @@ class EnrollFace {
 
   void _assertAvailable() {
     if (!_recognizer.isAvailable) {
-      throw const BusinessRuleException(
-        'Face recognition is not enabled on this build.',
-      );
+      throw BusinessRuleException(appStrings.faceUnavailableTitle);
     }
   }
 }
@@ -50,9 +49,7 @@ class IdentifyByFace {
 
   Future<FaceMatch?> call(FaceImageInput frame) async {
     if (!_recognizer.isAvailable) {
-      throw const BusinessRuleException(
-        'Face recognition is not enabled on this build.',
-      );
+      throw BusinessRuleException(appStrings.faceUnavailableTitle);
     }
     final probe = await _recognizer.extract(frame);
     final enrolled = await _repo.loadAll();
@@ -85,9 +82,7 @@ class RecordAttendanceByFace {
   }) async {
     final match = await _identify(frame);
     if (match == null) {
-      throw const NotFoundException(
-        'Face not recognised. Use the QR code instead.',
-      );
+      throw NotFoundException(appStrings.faceNotRecognised);
     }
 
     final current = await _getToday(

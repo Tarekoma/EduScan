@@ -13,14 +13,14 @@ class CornerBlobs extends StatelessWidget {
       child: ClipRect(
         child: Stack(
           children: [
-            Positioned(
+            PositionedDirectional(
               top: -70,
-              left: -70,
+              start: -70,
               child: _Blob(size: 200, color: color),
             ),
-            Positioned(
+            PositionedDirectional(
               bottom: -80,
-              right: -80,
+              end: -80,
               child: _Blob(size: 220, color: color),
             ),
           ],

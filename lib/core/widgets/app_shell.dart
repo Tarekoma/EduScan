@@ -3,10 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/app_config.dart';
+import '../enums/user_role.dart';
+import '../enums/user_role_display.dart';
+import '../locale/locale_cubit.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_cubit.dart';
 import '../utils/responsive.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../l10n/app_localizations.dart';
 
 class ShellDestination {
   const ShellDestination({
@@ -145,12 +149,19 @@ class _Sidebar extends StatelessWidget {
                 horizontal: AppSpacing.sm,
                 vertical: AppSpacing.xs,
               ),
+              child: _LocaleToggle(expanded: expanded),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
               child: _ThemeToggle(expanded: expanded),
             ),
             if (user != null)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                child: _UserFooter(name: user.name, role: user.role.value, expanded: expanded),
+                child: _UserFooter(name: user.name, role: user.role, expanded: expanded),
               ),
           ],
         ),
@@ -238,7 +249,8 @@ class _ThemeToggle extends StatelessWidget {
       color: AppColors.sidebarForegroundMuted,
       size: 20,
     );
-    final tooltip = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+    final l10n = AppLocalizations.of(context)!;
+    final tooltip = isDark ? l10n.themeSwitchToLight : l10n.themeSwitchToDark;
     void onTap() => context.read<ThemeCubit>().toggle(platformBrightness);
 
     if (!expanded) {
@@ -261,7 +273,60 @@ class _ThemeToggle extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  isDark ? 'Dark mode' : 'Light mode',
+                  isDark ? l10n.themeDarkMode : l10n.themeLightMode,
+                  style: const TextStyle(
+                    color: AppColors.sidebarForeground,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LocaleToggle extends StatelessWidget {
+  const _LocaleToggle({required this.expanded});
+
+  final bool expanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = context.watch<LocaleCubit>().state;
+    final isArabic = locale.languageCode == 'ar';
+    final l10n = AppLocalizations.of(context)!;
+    final icon = const Icon(
+      Icons.translate,
+      color: AppColors.sidebarForegroundMuted,
+      size: 20,
+    );
+    final tooltip = isArabic ? l10n.localeSwitchToEnglish : l10n.localeSwitchToArabic;
+    void onTap() => context.read<LocaleCubit>().toggle();
+
+    if (!expanded) {
+      return IconButton(tooltip: tooltip, icon: icon, onPressed: onTap);
+    }
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              icon,
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  isArabic ? l10n.localeCurrentArabic : l10n.localeCurrentEnglish,
                   style: const TextStyle(
                     color: AppColors.sidebarForeground,
                     fontWeight: FontWeight.w400,
@@ -280,13 +345,14 @@ class _UserFooter extends StatelessWidget {
   const _UserFooter({required this.name, required this.role, required this.expanded});
 
   final String name;
-  final String role;
+  final UserRole role;
   final bool expanded;
 
   @override
   Widget build(BuildContext context) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final roleLabel = role.isEmpty ? '' : '${role[0].toUpperCase()}${role.substring(1)}';
+    final roleLabel = role.label(context);
+    final l10n = AppLocalizations.of(context)!;
     final avatar = CircleAvatar(
       backgroundColor: AppColors.sidebarBackgroundActive,
       foregroundColor: Colors.white,
@@ -298,7 +364,7 @@ class _UserFooter extends StatelessWidget {
           avatar,
           const SizedBox(height: AppSpacing.xs),
           IconButton(
-            tooltip: 'Sign out',
+            tooltip: l10n.commonSignOut,
             icon: const Icon(Icons.logout, color: AppColors.sidebarForegroundMuted, size: 20),
             onPressed: () => context.read<AuthCubit>().signOut(),
           ),
@@ -328,7 +394,7 @@ class _UserFooter extends StatelessWidget {
           ),
         ),
         IconButton(
-          tooltip: 'Sign out',
+          tooltip: l10n.commonSignOut,
           icon: const Icon(Icons.logout, color: AppColors.sidebarForegroundMuted, size: 20),
           onPressed: () => context.read<AuthCubit>().signOut(),
         ),

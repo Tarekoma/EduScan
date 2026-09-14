@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../locale/locale_cubit.dart';
 import '../services/user_provisioner.dart';
 import '../theme/theme_cubit.dart';
 
@@ -32,6 +34,7 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
   sl.registerLazySingleton<UserProvisioner>(() => UserProvisioner());
+  final prefs = await SharedPreferences.getInstance();
 
   // ---- Features -------------------------------------------------------
   registerAuthDependencies(sl);
@@ -50,5 +53,6 @@ Future<void> configureDependencies() async {
 
   // ---- Cross-cutting -------------------------------------------------
   sl.registerLazySingleton(() => ThemeCubit());
+  sl.registerLazySingleton(() => LocaleCubit(prefs));
   sl.registerLazySingleton(() => AppRouter(sl<AuthCubit>()));
 }

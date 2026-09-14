@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 /// Standard confirmation dialog. Returns `true` when confirmed.
 Future<bool> showConfirmDialog(
   BuildContext context, {
   required String title,
   required String message,
-  String confirmLabel = 'Confirm',
-  String cancelLabel = 'Cancel',
+  String? confirmLabel,
+  String? cancelLabel,
   bool destructive = false,
 }) async {
+  final l10n = AppLocalizations.of(context)!;
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
@@ -17,7 +20,7 @@ Future<bool> showConfirmDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelLabel),
+          child: Text(cancelLabel ?? l10n.commonCancel),
         ),
         FilledButton(
           style: destructive
@@ -26,7 +29,7 @@ Future<bool> showConfirmDialog(
                 )
               : null,
           onPressed: () => Navigator.of(context).pop(true),
-          child: Text(confirmLabel),
+          child: Text(confirmLabel ?? l10n.commonConfirm),
         ),
       ],
     ),

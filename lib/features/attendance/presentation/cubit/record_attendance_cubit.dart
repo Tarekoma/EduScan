@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../qr/domain/entities/resolved_person.dart';
 import '../../../qr/domain/usecases/resolve_person.dart';
@@ -55,7 +56,7 @@ class RecordAttendanceCubit extends Cubit<RecordAttendanceState> {
   }) async {
     final actor = _actor();
     if (actor == null || !actor.canRecord) {
-      emit(state.failure('Only security may record attendance.'));
+      emit(state.failure(appStrings.attendanceOnlySecurityCanRecord));
       return;
     }
 
@@ -84,7 +85,7 @@ class RecordAttendanceCubit extends Cubit<RecordAttendanceState> {
 
     final actor = _actor();
     if (actor == null || !actor.canRecord) {
-      emit(state.failure('Only security may record attendance.'));
+      emit(state.failure(appStrings.attendanceOnlySecurityCanRecord));
       return;
     }
 

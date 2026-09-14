@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/services/file_service.dart';
 import '../../domain/excel_rows.dart';
 import '../../domain/repositories/excel_repository.dart';
@@ -25,7 +26,10 @@ class ExcelCubit extends Cubit<ExcelState> {
       final file = await _repo.exportAttendance(from: from, to: to);
       await _files.shareBytes(file.bytes, file.filename);
       emit(
-        state.copyWith(exporting: false, info: 'Exported ${file.filename}.'),
+        state.copyWith(
+          exporting: false,
+          info: appStrings.excelExportedFile(file.filename),
+        ),
       );
     } catch (e, s) {
       emit(
@@ -55,18 +59,24 @@ class ExcelCubit extends Cubit<ExcelState> {
   Future<void> confirmStudentImport() async {
     final preview = state.studentPreview;
     if (preview == null || preview.rows.isEmpty) return;
-    await _runImport(() => _repo.importStudents(preview.rows), 'student');
+    await _runImport(
+      () => _repo.importStudents(preview.rows),
+      appStrings.excelKindStudent,
+    );
   }
 
   Future<void> confirmAttendanceImport() async {
     final preview = state.attendancePreview;
     if (preview == null || preview.rows.isEmpty) return;
-    await _runImport(() => _repo.importAttendance(preview.rows), 'attendance');
+    await _runImport(
+      () => _repo.importAttendance(preview.rows),
+      appStrings.excelKindAttendance,
+    );
   }
 
   Future<void> _runImport(
     Future<ImportOutcome> Function() action,
-    String label,
+    String kind,
   ) async {
     emit(state.copyWith(importing: true, clearMessages: true));
     try {
@@ -74,7 +84,7 @@ class ExcelCubit extends Cubit<ExcelState> {
       emit(
         state.copyWith(
           importing: false,
-          info: 'Imported ${outcome.count} $label record(s).',
+          info: appStrings.excelImportedRecords(outcome.count, kind),
           clearPreview: true,
         ),
       );

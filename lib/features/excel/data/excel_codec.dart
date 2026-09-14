@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/enums/person_type.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../../core/l10n/app_strings.dart';
 import '../domain/excel_rows.dart';
 import '../domain/repositories/excel_repository.dart';
 
@@ -53,7 +54,7 @@ class ExcelCodec {
 
     final bytes = book.save();
     if (bytes == null) {
-      throw const UnknownException(message: 'Could not build the workbook.');
+      throw UnknownException(message: appStrings.excelCouldNotBuildWorkbook);
     }
     return Uint8List.fromList(bytes);
   }
@@ -65,9 +66,7 @@ class ExcelCodec {
     try {
       book = Excel.decodeBytes(bytes);
     } catch (_) {
-      throw const ValidationException(
-        'That file is not a valid .xlsx workbook.',
-      );
+      throw ValidationException(appStrings.excelInvalidWorkbook);
     }
     if (book.tables.isEmpty) return const [];
     final table = book.tables.values.first;

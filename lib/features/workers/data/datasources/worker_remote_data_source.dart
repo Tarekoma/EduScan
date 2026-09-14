@@ -4,6 +4,7 @@ import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/enums/person_type.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/utils/person_id.dart';
 import '../../domain/entities/worker.dart';
 import '../../domain/repositories/worker_repository.dart';
@@ -32,7 +33,7 @@ class WorkerRemoteDataSource {
     try {
       final doc = await _col.doc(workerId).get();
       if (!doc.exists) {
-        throw NotFoundException('Worker "$workerId" was not found.');
+        throw NotFoundException(appStrings.workerNotFound(workerId));
       }
       return WorkerModel.fromDoc(doc);
     } catch (e, s) {

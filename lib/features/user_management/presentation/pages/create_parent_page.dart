@@ -5,6 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../cubit/user_management_cubit.dart';
 import 'student_multi_select_page.dart';
 
@@ -46,9 +47,9 @@ class _CreateParentPageState extends State<CreateParentPage> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     if (_studentIds.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Link at least one child.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.linkAtLeastOneChildSnackbar)),
+      );
       return;
     }
     final ok = await context.read<UserManagementCubit>().createParent(
@@ -63,8 +64,9 @@ class _CreateParentPageState extends State<CreateParentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('New parent account')),
+      appBar: AppBar(title: Text(l10n.newParentAccountTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
@@ -73,14 +75,17 @@ class _CreateParentPageState extends State<CreateParentPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppTextField(
-                label: 'Full name',
+                label: l10n.fieldFullName,
                 controller: _name,
                 textInputAction: TextInputAction.next,
-                validator: (v) => Validators.required(v, field: 'Name'),
+                validator: (v) => Validators.required(
+                  v,
+                  message: l10n.validatorRequired(l10n.fieldName),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Email',
+                label: l10n.fieldEmail,
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
@@ -88,14 +93,14 @@ class _CreateParentPageState extends State<CreateParentPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Temporary password',
+                label: l10n.fieldTemporaryPassword,
                 controller: _password,
                 textInputAction: TextInputAction.next,
                 validator: Validators.password,
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Phone',
+                label: l10n.fieldPhone,
                 controller: _phone,
                 keyboardType: TextInputType.phone,
                 validator: Validators.phone,
@@ -103,10 +108,10 @@ class _CreateParentPageState extends State<CreateParentPage> {
               const SizedBox(height: AppSpacing.lg),
               Card(
                 child: ListTile(
-                  title: const Text('Linked children'),
+                  title: Text(l10n.linkedChildrenLabel),
                   subtitle: Text(
                     _studentIds.isEmpty
-                        ? 'None selected'
+                        ? l10n.noneSelectedLabel
                         : _studentIds.join(', '),
                   ),
                   trailing: const Icon(Icons.chevron_right),
@@ -117,7 +122,7 @@ class _CreateParentPageState extends State<CreateParentPage> {
               BlocBuilder<UserManagementCubit, UserManagementState>(
                 buildWhen: (a, b) => a.isMutating != b.isMutating,
                 builder: (context, state) => PrimaryButton(
-                  label: 'Create account',
+                  label: l10n.createAccountButton,
                   isLoading: state.isMutating,
                   onPressed: _submit,
                 ),

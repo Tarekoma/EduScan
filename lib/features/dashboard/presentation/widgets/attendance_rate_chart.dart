@@ -3,18 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/attendance_report_stats.dart';
 
-/// Attendance rate (0-100%) per calendar day across the selected report
+/// Number of students present per calendar day across the selected report
 /// range, built from real per-day presence — not a mock series.
 class AttendanceRateChart extends StatelessWidget {
-  const AttendanceRateChart({super.key, required this.points});
+  const AttendanceRateChart({
+    super.key,
+    required this.points,
+    required this.totalStudents,
+  });
 
   final List<DailyRatePoint> points;
+
+  /// Roster size — caps the y-axis so the line never has anywhere to
+  /// overshoot above the real maximum.
+  final int totalStudents;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -22,15 +32,15 @@ class AttendanceRateChart extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Attendance rate over time',
+              l10n.attendanceRateOverTime,
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: AppSpacing.md),
             SizedBox(
               height: 220,
               child: points.length < 2
-                  ? const Center(child: Text('Not enough data for this range.'))
-                  : LineChart(_data(scheme)),
+                  ? Center(child: Text(l10n.notEnoughDataForRange))
+                  : LineChart(_data(scheme, l10n)),
             ),
           ],
         ),
@@ -38,18 +48,24 @@ class AttendanceRateChart extends StatelessWidget {
     );
   }
 
-  LineChartData _data(ColorScheme scheme) {
+  LineChartData _data(ColorScheme scheme, AppLocalizations l10n) {
     final spots = [
       for (var i = 0; i < points.length; i++)
-        FlSpot(i.toDouble(), points[i].rate * 100),
+        FlSpot(i.toDouble(), points[i].presentCount.toDouble()),
     ];
     final labelEvery = (points.length / 6).ceil().clamp(1, points.length);
+    final maxY = totalStudents <= 0 ? 1.0 : totalStudents.toDouble();
+    final yInterval = (maxY / 4) < 1 ? 1.0 : maxY / 4;
 
     return LineChartData(
       minX: 0,
       maxX: (points.length - 1).toDouble(),
       minY: 0,
-      maxY: 100,
+      maxY: maxY,
+      // The data never exceeds [totalStudents], but a curved line can still
+      // overshoot past its own endpoints during interpolation — clamp it back
+      // to the chart's bounds so it never visually leaks above/below the card.
+      clipData: const FlClipData.all(),
       gridData: const FlGridData(show: true, drawVerticalLine: false),
       borderData: FlBorderData(show: false),
       titlesData: FlTitlesData(
@@ -61,9 +77,9 @@ class AttendanceRateChart extends StatelessWidget {
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 36,
-            interval: 25,
+            interval: yInterval,
             getTitlesWidget: (value, meta) =>
-                Text('${value.toInt()}%', style: const TextStyle(fontSize: 10)),
+                Text('${value.toInt()}', style: const TextStyle(fontSize: 10)),
           ),
         ),
         bottomTitles: AxisTitles(
@@ -93,7 +109,7 @@ class AttendanceRateChart extends StatelessWidget {
                 ? DateFormat('EEE, d MMM').format(points[i].date)
                 : '';
             return LineTooltipItem(
-              '$label\n${s.y.toStringAsFixed(1)}%',
+              '$label\n${l10n.dashboardPresentCount(s.y.toInt())}',
               const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
             );
           }).toList(),
@@ -103,6 +119,7 @@ class AttendanceRateChart extends StatelessWidget {
         LineChartBarData(
           spots: spots,
           isCurved: true,
+          preventCurveOverShooting: true,
           color: scheme.primary,
           barWidth: 3,
           dotData: FlDotData(show: points.length <= 14),

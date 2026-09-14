@@ -5,6 +5,7 @@ import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/enums/user_role.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/services/user_provisioner.dart';
 import '../../../auth/data/models/app_user_model.dart';
 import '../../../auth/domain/entities/app_user.dart';
@@ -42,7 +43,7 @@ class UserAdminRemoteDataSource {
 
   String get _managerUid {
     final uid = _auth.currentUser?.uid;
-    if (uid == null) throw const AuthException('Please sign in again.');
+    if (uid == null) throw AuthException(appStrings.errorPleaseSignInAgain);
     return uid;
   }
 
@@ -131,7 +132,7 @@ class UserAdminRemoteDataSource {
     try {
       final snap = await _users.doc(uid).get();
       if (!snap.exists || snap.data()?[UserFields.role] != UserRole.parent.value) {
-        throw const NotFoundException('No such parent account.');
+        throw NotFoundException(appStrings.noSuchParentAccount);
       }
       // Reconcile against the students' own back-reference — not the
       // parent's stored studentIds — so this also self-heals any link that
@@ -199,7 +200,7 @@ class UserAdminRemoteDataSource {
       final snaps = await Future.wait(ids.map((id) => _students.doc(id).get()));
       final missing = snaps.where((s) => !s.exists).map((s) => s.id).toList();
       if (missing.isNotEmpty) {
-        throw ValidationException('Unknown student(s): ${missing.join(', ')}');
+        throw ValidationException(appStrings.unknownStudentIds(missing.join(', ')));
       }
     } catch (e, s) {
       throw ErrorMapper.map(e, s);
