@@ -213,6 +213,13 @@ class _FilterRow extends StatelessWidget {
   }
 }
 
+/// First letter of the first two words in [className], e.g. "Senior A" -> "SA".
+String _classInitials(String className) {
+  final words = className.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+  final letters = words.take(2).map((w) => w[0].toUpperCase()).join();
+  return letters.isEmpty ? '?' : letters;
+}
+
 class _StudentCard extends StatelessWidget {
   const _StudentCard({
     required this.student,
@@ -235,9 +242,15 @@ class _StudentCard extends StatelessWidget {
     return Card(
       child: ListTile(
         onTap: onTap,
-        leading: CircleAvatar(child: Text(student.className)),
+        leading: CircleAvatar(child: Text(_classInitials(student.className))),
         title: Text(student.fullName),
-        subtitle: Text('${student.studentId} • Class ${student.className}'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(student.studentId),
+            Text('Class ${student.className}'),
+          ],
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
