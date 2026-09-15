@@ -52,7 +52,7 @@ Future<void> configureDependencies() async {
   sl<PickupAlertCubit>();
 
   // ---- Cross-cutting -------------------------------------------------
-  sl.registerLazySingleton(() => ThemeCubit());
+  sl.registerLazySingleton(() => ThemeCubit(prefs));
   sl.registerLazySingleton(() => LocaleCubit(prefs));
   sl.registerLazySingleton(() => AppRouter(sl<AuthCubit>()));
 }
