@@ -32,7 +32,7 @@
 
   "attendanceStateAbsent": "Absent",
   "attendanceStateInside": "Present",
-  "attendanceStateLeft": "Left",
+  "attendanceStateLeft": "Present",
 
   "pickupStatusPending": "Pending",
   "pickupStatusAcknowledged": "Acknowledged",
@@ -186,6 +186,7 @@
   "@dateRangeValue": {"placeholders": {"start": {"type": "String"}, "end": {"type": "String"}}},
   "exportAndShareButton": "Export & share",
   "importStudentsHint": "Headers: fullName, className",
+  "importWorkersHint": "Headers: fullName, jobTitle (teacher, administrative_staff, other)",
   "importAttendanceTitle": "Attendance history",
   "importAttendanceHint": "Headers: date (yyyy-MM-dd), Person ID, Person Type, Check-in (HH:mm), Check-out (HH:mm)",
   "chooseXlsxFileButton": "Choose .xlsx file",
@@ -201,6 +202,7 @@
   "excelImportedRecords": "{count, plural, one{Imported {count} {kind} record.} other{Imported {count} {kind} records.}}",
   "@excelImportedRecords": {"placeholders": {"count": {"type": "int"}, "kind": {"type": "String"}}},
   "excelKindStudent": "student",
+  "excelKindWorker": "worker",
   "excelKindAttendance": "attendance",
 
   "errorPleaseSignInAgain": "Please sign in again.",

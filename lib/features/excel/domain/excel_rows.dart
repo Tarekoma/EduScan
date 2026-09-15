@@ -1,4 +1,5 @@
 import '../../../core/enums/person_type.dart';
+import '../../../core/enums/worker_job_title.dart';
 
 /// One row of an attendance export.
 class AttendanceExportRow {
@@ -33,6 +34,19 @@ class StudentImportRow {
   Map<String, String> toJson() => {
     'fullName': fullName,
     'className': className,
+  };
+}
+
+/// A parsed worker row awaiting import.
+class WorkerImportRow {
+  const WorkerImportRow({required this.fullName, required this.jobTitle});
+
+  final String fullName;
+  final WorkerJobTitle jobTitle;
+
+  Map<String, String> toJson() => {
+    'fullName': fullName,
+    'jobTitle': jobTitle.value,
   };
 }
 

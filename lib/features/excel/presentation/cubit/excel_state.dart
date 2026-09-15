@@ -5,6 +5,7 @@ class ExcelState extends Equatable {
     this.exporting = false,
     this.importing = false,
     this.studentPreview,
+    this.workerPreview,
     this.attendancePreview,
     this.info,
     this.error,
@@ -13,6 +14,7 @@ class ExcelState extends Equatable {
   final bool exporting;
   final bool importing;
   final ParsedSheet<StudentImportRow>? studentPreview;
+  final ParsedSheet<WorkerImportRow>? workerPreview;
   final ParsedSheet<AttendanceImportRow>? attendancePreview;
   final String? info;
   final String? error;
@@ -23,6 +25,7 @@ class ExcelState extends Equatable {
     bool? exporting,
     bool? importing,
     ParsedSheet<StudentImportRow>? studentPreview,
+    ParsedSheet<WorkerImportRow>? workerPreview,
     ParsedSheet<AttendanceImportRow>? attendancePreview,
     bool clearPreview = false,
     String? info,
@@ -35,6 +38,9 @@ class ExcelState extends Equatable {
       studentPreview: clearPreview
           ? null
           : (studentPreview ?? this.studentPreview),
+      workerPreview: clearPreview
+          ? null
+          : (workerPreview ?? this.workerPreview),
       attendancePreview: clearPreview
           ? null
           : (attendancePreview ?? this.attendancePreview),
@@ -49,6 +55,8 @@ class ExcelState extends Equatable {
     importing,
     studentPreview?.rows.length,
     studentPreview?.skipped.length,
+    workerPreview?.rows.length,
+    workerPreview?.skipped.length,
     attendancePreview?.rows.length,
     attendancePreview?.skipped.length,
     info,

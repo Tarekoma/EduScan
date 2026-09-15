@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/constants/student_classes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -24,10 +25,18 @@ class StudentFormPage extends StatefulWidget {
 class _StudentFormPageState extends State<StudentFormPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
-  late final TextEditingController _className;
+  late String? _className;
   Student? _existing;
 
   bool get _isEdit => widget.existingId != null;
+
+  /// The fixed class list, plus the student's current class when it's an
+  /// older free-text value that predates the picklist — so editing an
+  /// existing student never crashes on a value the dropdown doesn't know.
+  List<String> get _classOptions => [
+    ...StudentClasses.all,
+    if (_className != null && !StudentClasses.all.contains(_className)) _className!,
+  ];
 
   @override
   void initState() {
@@ -41,13 +50,12 @@ class _StudentFormPageState extends State<StudentFormPage> {
       }
     }
     _name = TextEditingController(text: _existing?.fullName ?? '');
-    _className = TextEditingController(text: _existing?.className ?? '');
+    _className = _existing?.className;
   }
 
   @override
   void dispose() {
     _name.dispose();
-    _className.dispose();
     super.dispose();
   }
 
@@ -55,15 +63,13 @@ class _StudentFormPageState extends State<StudentFormPage> {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     final cubit = context.read<StudentsCubit>();
+    final className = _className!;
     final ok = _isEdit
         ? await cubit.update(
-            _existing!.copyWith(
-              fullName: _name.text,
-              className: _className.text,
-            ),
+            _existing!.copyWith(fullName: _name.text, className: className),
           )
         : await cubit.create(
-            StudentDraft(fullName: _name.text, className: _className.text),
+            StudentDraft(fullName: _name.text, className: className),
           );
     if (ok && mounted) Navigator.of(context).pop();
   }
@@ -98,11 +104,14 @@ class _StudentFormPageState extends State<StudentFormPage> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: l10n.fieldClass,
-                controller: _className,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _submit(),
+              DropdownButtonFormField<String>(
+                initialValue: _className,
+                decoration: InputDecoration(labelText: l10n.fieldClass),
+                items: [
+                  for (final c in _classOptions)
+                    DropdownMenuItem(value: c, child: Text(c)),
+                ],
+                onChanged: (v) => setState(() => _className = v),
                 validator: (v) => Validators.required(
                   v,
                   message: l10n.validatorRequired(l10n.fieldClass),

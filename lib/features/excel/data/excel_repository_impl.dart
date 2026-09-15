@@ -18,6 +18,7 @@ import '../../attendance/domain/repositories/attendance_repository.dart';
 import '../../students/data/models/student_model.dart';
 import '../../students/domain/repositories/student_repository.dart';
 import '../../user_management/domain/usecases/user_admin_usecases.dart';
+import '../../workers/data/models/worker_model.dart';
 import '../../workers/domain/repositories/worker_repository.dart';
 import '../domain/excel_rows.dart';
 import '../domain/repositories/excel_repository.dart';
@@ -101,6 +102,10 @@ class ExcelRepositoryImpl implements ExcelRepository {
       _codec.parseStudents(bytes);
 
   @override
+  ParsedSheet<WorkerImportRow> parseWorkers(Uint8List bytes) =>
+      _codec.parseWorkers(bytes);
+
+  @override
   ParsedSheet<AttendanceImportRow> parseAttendance(Uint8List bytes) =>
       _codec.parseAttendance(bytes);
 
@@ -144,6 +149,51 @@ class ExcelRepositoryImpl implements ExcelRepository {
               studentId: id,
               fullName: slice[j].fullName,
               className: slice[j].className,
+            ),
+          );
+        }
+        await batch.commit();
+      }
+      return ImportOutcome(count: ids.length, ids: ids);
+    } catch (e, s) {
+      throw ErrorMapper.map(e, s);
+    }
+  }
+
+  /// Creates workers in bulk with sequential ids. A single transaction reserves
+  /// the id range on `metadata/counters`; the documents are then written in
+  /// [WriteBatch] chunks.
+  @override
+  Future<ImportOutcome> importWorkers(List<WorkerImportRow> rows) async {
+    if (rows.isEmpty) return const ImportOutcome(count: 0);
+    try {
+      final counterRef = _firestore
+          .collection(CounterDoc.collection)
+          .doc(CounterDoc.doc);
+      final workersCol = _firestore.collection(FirestoreCollections.workers);
+
+      final startAfter = await _firestore.runTransaction<int>((tx) async {
+        final snap = await tx.get(counterRef);
+        final current = (snap.data()?[CounterDoc.workerField] as int?) ?? 0;
+        tx.set(counterRef, {
+          CounterDoc.workerField: current + rows.length,
+        }, SetOptions(merge: true));
+        return current;
+      });
+
+      final ids = <String>[];
+      for (var i = 0; i < rows.length; i += _batchLimit) {
+        final batch = _firestore.batch();
+        final slice = rows.skip(i).take(_batchLimit).toList();
+        for (var j = 0; j < slice.length; j++) {
+          final id = PersonId.format(PersonType.worker, startAfter + i + j + 1);
+          ids.add(id);
+          batch.set(
+            workersCol.doc(id),
+            WorkerModel.newData(
+              workerId: id,
+              fullName: slice[j].fullName,
+              jobTitle: slice[j].jobTitle,
             ),
           );
         }

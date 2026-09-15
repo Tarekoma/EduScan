@@ -151,6 +151,21 @@ class _ExcelViewState extends State<_ExcelView> {
         ),
         const SizedBox(height: AppSpacing.lg),
         _ImportSection(
+          title: l10n.filterWorkers,
+          hint: l10n.importWorkersHint,
+          busy: state.busy,
+          preview: state.workerPreview == null
+              ? null
+              : _PreviewInfo(
+                  ready: state.workerPreview!.rows.length,
+                  skipped: state.workerPreview!.skipped,
+                ),
+          onPick: cubit.pickWorkerFile,
+          onConfirm: cubit.confirmWorkerImport,
+          onClear: cubit.clearPreview,
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _ImportSection(
           title: l10n.importAttendanceTitle,
           hint: l10n.importAttendanceHint,
           busy: state.busy,

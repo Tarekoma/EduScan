@@ -31,7 +31,7 @@
 
   "attendanceStateAbsent": "غائب",
   "attendanceStateInside": "حاضر",
-  "attendanceStateLeft": "غادر",
+  "attendanceStateLeft": "حاضر",
 
   "pickupStatusPending": "قيد الانتظار",
   "pickupStatusAcknowledged": "تم التأكيد",
@@ -168,6 +168,7 @@
   "dateRangeValue": "{start}  –  {end}",
   "exportAndShareButton": "تصدير ومشاركة",
   "importStudentsHint": "الأعمدة: fullName، className",
+  "importWorkersHint": "الأعمدة: fullName، jobTitle (teacher، administrative_staff، other)",
   "importAttendanceTitle": "سجل الحضور",
   "importAttendanceHint": "الأعمدة: date (yyyy-MM-dd)، Person ID، Person Type، Check-in (HH:mm)، Check-out (HH:mm)",
   "chooseXlsxFileButton": "اختر ملف .xlsx",
@@ -178,6 +179,7 @@
   "excelExportedFile": "تم تصدير {filename}.",
   "excelImportedRecords": "{count, plural, zero{لم يتم استيراد أي سجلات {kind}.} one{تم استيراد سجل {kind} واحد.} two{تم استيراد سجلَّي {kind}.} few{تم استيراد {count} سجلات {kind}.} many{تم استيراد {count} سجلًا من {kind}.} other{تم استيراد {count} سجل {kind}.}}",
   "excelKindStudent": "طالب",
+  "excelKindWorker": "موظف",
   "excelKindAttendance": "حضور",
 
   "errorPleaseSignInAgain": "يرجى تسجيل الدخول مرة أخرى.",

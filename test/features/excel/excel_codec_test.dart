@@ -66,4 +66,31 @@ void main() {
     expect(parsed.rows[1].personType, PersonType.worker);
     expect(parsed.skipped, [4]);
   });
+
+  test(
+    'parseAttendance reads native Excel date/time cells, not just text',
+    () {
+      final book = Excel.createExcel();
+      final sheet = book['Sheet1'];
+      sheet.appendRow(
+        ['Date', 'Person ID', 'Person Type', 'Check-in', 'Check-out']
+            .map(TextCellValue.new)
+            .toList(),
+      );
+      sheet.appendRow([
+        DateCellValue(year: 2026, month: 9, day: 6),
+        TextCellValue('WRK_00001'),
+        TextCellValue('worker'),
+        const TimeCellValue(hour: 8, minute: 15),
+        const TimeCellValue(hour: 15, minute: 33),
+      ]);
+      final bytes = Uint8List.fromList(book.save()!);
+
+      final parsed = codec.parseAttendance(bytes);
+      expect(parsed.skipped, isEmpty);
+      expect(parsed.rows.single.date, '2026-09-06');
+      expect(parsed.rows.single.checkIn, '08:15');
+      expect(parsed.rows.single.checkOut, '15:33');
+    },
+  );
 }

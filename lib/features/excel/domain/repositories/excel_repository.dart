@@ -26,11 +26,17 @@ abstract interface class ExcelRepository {
 
   ParsedSheet<StudentImportRow> parseStudents(Uint8List bytes);
 
+  ParsedSheet<WorkerImportRow> parseWorkers(Uint8List bytes);
+
   ParsedSheet<AttendanceImportRow> parseAttendance(Uint8List bytes);
 
   /// Bulk-creates students with sequential ids (manager only). Returns how many
   /// were written.
   Future<ImportOutcome> importStudents(List<StudentImportRow> rows);
+
+  /// Bulk-creates workers with sequential ids (manager only). Returns how many
+  /// were written.
+  Future<ImportOutcome> importWorkers(List<WorkerImportRow> rows);
 
   Future<ImportOutcome> importAttendance(List<AttendanceImportRow> rows);
 }

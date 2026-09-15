@@ -4,6 +4,7 @@ import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/enums/person_type.dart';
+import '../../../core/enums/worker_job_title.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../domain/excel_rows.dart';
@@ -106,6 +107,28 @@ class ExcelCodec {
     return ParsedSheet(rows: rows, skipped: skipped);
   }
 
+  ParsedSheet<WorkerImportRow> parseWorkers(Uint8List bytes) {
+    final rows = <WorkerImportRow>[];
+    final skipped = <int>[];
+    var line = 1;
+    for (final m in _readSheet(bytes)) {
+      line++;
+      final name = m['fullname'] ?? m['name'] ?? '';
+      final jobTitleRaw = m['jobtitle'] ?? m['job title'] ?? '';
+      if (name.isEmpty || jobTitleRaw.isEmpty) {
+        skipped.add(line);
+        continue;
+      }
+      rows.add(
+        WorkerImportRow(
+          fullName: name,
+          jobTitle: WorkerJobTitle.fromValue(jobTitleRaw.trim().toLowerCase()),
+        ),
+      );
+    }
+    return ParsedSheet(rows: rows, skipped: skipped);
+  }
+
   ParsedSheet<AttendanceImportRow> parseAttendance(Uint8List bytes) {
     final rows = <AttendanceImportRow>[];
     final skipped = <int>[];
@@ -136,6 +159,10 @@ class ExcelCodec {
   static String? _normaliseDate(String raw) {
     final v = raw.trim();
     if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(v)) return v;
+    // A real Excel date cell (not text) round-trips as an ISO-8601 instant,
+    // e.g. "2026-09-06T00:00:00.000Z" — the calendar date is its first 10
+    // characters regardless of the time-of-day/offset suffix.
+    if (RegExp(r'^\d{4}-\d{2}-\d{2}T').hasMatch(v)) return v.substring(0, 10);
     for (final f in ['d/M/yyyy', 'M/d/yyyy', 'dd-MM-yyyy']) {
       try {
         return DateFormat('yyyy-MM-dd').format(DateFormat(f).parseStrict(v));
@@ -149,7 +176,12 @@ class ExcelCodec {
   static String? _normaliseTime(String raw) {
     final v = raw.trim();
     if (v.isEmpty) return null;
-    final m = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(v);
+    // A real Excel date+time cell round-trips as an ISO-8601 instant, e.g.
+    // "2026-09-06T08:15:00.000Z" — the time-of-day is right after the "T".
+    final isoMatch = RegExp(
+      r'^\d{4}-\d{2}-\d{2}T(\d{1,2}):(\d{2})',
+    ).firstMatch(v);
+    final m = isoMatch ?? RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(v);
     if (m == null) return null;
     return '${m.group(1)!.padLeft(2, '0')}:${m.group(2)}';
   }
