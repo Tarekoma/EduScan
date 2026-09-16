@@ -56,18 +56,22 @@ class ExcelRepositoryImpl implements ExcelRepository {
   Future<SpreadsheetFile> exportAttendance({
     required DateTime from,
     required DateTime to,
+    required PersonType personType,
   }) async {
-    final records = await _attendance.getInRange(
+    final allRecords = await _attendance.getInRange(
       fromDate: DateKey.of(from),
       toDate: DateKey.of(to),
     );
-    final students = await _students.watchStudents().first;
-    final workers = await _workers.watchWorkers().first;
+    final records = allRecords.where((r) => r.personType == personType).toList();
     final security = await _watchSecurity(UserRole.security).first;
 
     final names = <String, String>{
-      for (final s in students) s.studentId: s.fullName,
-      for (final w in workers) w.workerId: w.fullName,
+      if (personType == PersonType.student)
+        for (final s in await _students.watchStudents().first)
+          s.studentId: s.fullName
+      else
+        for (final w in await _workers.watchWorkers().first)
+          w.workerId: w.fullName,
     };
     final recorders = {for (final u in security) u.uid: u.name};
 
@@ -94,7 +98,8 @@ class ExcelRepositoryImpl implements ExcelRepository {
     final bytes = _codec.buildAttendanceWorkbook(rows);
     final stamp = DateFormat('yyyyMMdd').format(from);
     final stamp2 = DateFormat('yyyyMMdd').format(to);
-    return SpreadsheetFile(bytes, 'attendance_${stamp}_$stamp2.xlsx');
+    final kind = personType == PersonType.student ? 'students' : 'workers';
+    return SpreadsheetFile(bytes, 'attendance_${kind}_${stamp}_$stamp2.xlsx');
   }
 
   @override
@@ -213,6 +218,7 @@ class ExcelRepositoryImpl implements ExcelRepository {
     if (rows.isEmpty) return const ImportOutcome(count: 0);
     try {
       final by = _managerUid;
+      await _assertPersonsExist(rows);
       final col = _firestore.collection(FirestoreCollections.attendance);
       var written = 0;
 
@@ -260,6 +266,45 @@ class ExcelRepositoryImpl implements ExcelRepository {
     } catch (e, s) {
       throw ErrorMapper.map(e, s);
     }
+  }
+
+  /// Firestore's `whereIn` accepts at most 30 values per query.
+  static const int _whereInLimit = 30;
+
+  /// Verifies every person referenced in [rows] is already registered.
+  /// Security Rules reject the whole batch (Rule 4) if even one row targets
+  /// an unknown person, so this checks up front and reports which ids are
+  /// missing instead of letting Firestore fail the write opaquely.
+  Future<void> _assertPersonsExist(List<AttendanceImportRow> rows) async {
+    final studentIds = <String>{};
+    final workerIds = <String>{};
+    for (final row in rows) {
+      if (row.personType == PersonType.student) {
+        studentIds.add(row.personId);
+      } else {
+        workerIds.add(row.personId);
+      }
+    }
+    final missing = [
+      ...await _missingIds(FirestoreCollections.students, studentIds),
+      ...await _missingIds(FirestoreCollections.workers, workerIds),
+    ]..sort();
+    if (missing.isNotEmpty) {
+      throw ValidationException(appStrings.excelUnknownPersons(missing.join(', ')));
+    }
+  }
+
+  Future<List<String>> _missingIds(String collection, Set<String> ids) async {
+    if (ids.isEmpty) return const [];
+    final col = _firestore.collection(collection);
+    final found = <String>{};
+    final list = ids.toList();
+    for (var i = 0; i < list.length; i += _whereInLimit) {
+      final slice = list.skip(i).take(_whereInLimit).toList();
+      final snap = await col.where(FieldPath.documentId, whereIn: slice).get();
+      found.addAll(snap.docs.map((d) => d.id));
+    }
+    return ids.where((id) => !found.contains(id)).toList();
   }
 
   /// Parses `HH:mm` on [dateKey] (`yyyy-MM-dd`) into a [Timestamp], or null when

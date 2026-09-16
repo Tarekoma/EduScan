@@ -117,10 +117,20 @@ class _ExcelViewState extends State<_ExcelView> {
         ),
         const SizedBox(height: AppSpacing.lg),
         PrimaryButton(
-          label: l10n.exportAndShareButton,
+          label: l10n.exportStudentsButton,
           icon: Icons.file_download,
           isLoading: state.exporting,
-          onPressed: () => context.read<ExcelCubit>().exportAttendance(
+          onPressed: () => context.read<ExcelCubit>().exportStudentAttendance(
+            _range.start,
+            _range.end,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        PrimaryButton(
+          label: l10n.exportWorkersButton,
+          icon: Icons.file_download,
+          isLoading: state.exporting,
+          onPressed: () => context.read<ExcelCubit>().exportWorkerAttendance(
             _range.start,
             _range.end,
           ),

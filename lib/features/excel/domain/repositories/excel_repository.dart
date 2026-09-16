@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../../../../core/enums/person_type.dart';
 import '../excel_rows.dart';
 
 class SpreadsheetFile {
@@ -17,11 +18,12 @@ class ParsedSheet<T> {
 }
 
 abstract interface class ExcelRepository {
-  /// Builds an attendance workbook for `[from, to]` (both inclusive), resolving
-  /// person and recorder names.
+  /// Builds an attendance workbook for `[from, to]` (both inclusive), limited
+  /// to [personType], resolving person and recorder names.
   Future<SpreadsheetFile> exportAttendance({
     required DateTime from,
     required DateTime to,
+    required PersonType personType,
   });
 
   ParsedSheet<StudentImportRow> parseStudents(Uint8List bytes);

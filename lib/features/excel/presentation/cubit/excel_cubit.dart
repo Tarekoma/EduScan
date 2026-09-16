@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/enums/person_type.dart';
 import '../../../../core/errors/error_mapper.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/services/file_service.dart';
@@ -22,10 +23,24 @@ class ExcelCubit extends Cubit<ExcelState> {
   final ExcelRepository _repo;
   final FileService _files;
 
-  Future<void> exportAttendance(DateTime from, DateTime to) async {
+  Future<void> exportStudentAttendance(DateTime from, DateTime to) =>
+      _exportAttendance(from, to, PersonType.student);
+
+  Future<void> exportWorkerAttendance(DateTime from, DateTime to) =>
+      _exportAttendance(from, to, PersonType.worker);
+
+  Future<void> _exportAttendance(
+    DateTime from,
+    DateTime to,
+    PersonType personType,
+  ) async {
     emit(state.copyWith(exporting: true, clearMessages: true));
     try {
-      final file = await _repo.exportAttendance(from: from, to: to);
+      final file = await _repo.exportAttendance(
+        from: from,
+        to: to,
+        personType: personType,
+      );
       await _files.shareBytes(file.bytes, file.filename);
       emit(
         state.copyWith(

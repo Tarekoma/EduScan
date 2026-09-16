@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -57,8 +58,9 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
   void _submit({AttendanceAction? action}) {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
+    final number = int.parse(_idController.text.trim());
     context.read<RecordAttendanceCubit>().submit(
-      personId: _idController.text.trim().toUpperCase(),
+      personId: PersonId.format(_type, number),
       action: action,
     );
   }
@@ -165,15 +167,21 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
               key: _formKey,
               child: TextFormField(
                 controller: _idController,
-                textCapitalization: TextCapitalization.characters,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(5),
+                ],
                 decoration: InputDecoration(
-                  labelText: '${_type.qrPrefix}_XXXXX',
+                  labelText: 'XXXXX',
+                  prefixText: '${_type.qrPrefix}_',
                   prefixIcon: const Icon(Icons.tag),
                 ),
                 validator: (v) {
-                  final value = (v ?? '').trim().toUpperCase();
+                  final value = (v ?? '').trim();
                   if (value.isEmpty) return l10n.validatorEnterId;
-                  if (!PersonId.isValid(value, _type)) {
+                  final number = int.tryParse(value);
+                  if (number == null || number <= 0) {
                     return l10n.validatorIdFormat(_type.qrPrefix);
                   }
                   return null;

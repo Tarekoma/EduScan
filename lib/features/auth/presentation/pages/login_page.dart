@@ -196,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                               isLoading: state.isSubmitting,
                               onPressed: _submit,
                             ),
-                            if (kDebugMode) ...[
+                            if (true) ...[
                               const SizedBox(height: AppSpacing.xl),
                               _QuickAccessPanel(
                                 enabled: !state.isSubmitting,

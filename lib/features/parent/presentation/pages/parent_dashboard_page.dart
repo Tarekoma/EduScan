@@ -5,14 +5,17 @@ import '../../../../core/constants/app_config.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/enums/attendance_state.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/class_initials.dart';
 import '../../../../core/utils/time_format.dart';
 import '../../../../core/widgets/app_state_views.dart';
+import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
+import '../../../../core/widgets/sign_out_button.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/theme_toggle_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../attendance/domain/entities/attendance_record.dart';
 import '../../../attendance/presentation/attendance_status_display.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../pickup/presentation/widgets/parent_pickup_card.dart';
 import '../cubit/parent_dashboard_cubit.dart';
 
@@ -38,34 +41,34 @@ class _ParentDashboardView extends StatelessWidget {
       appBar: AppBar(
         toolbarHeight: 76,
         title: PageHeader(title: l10n.parentMyChildrenTitle),
-        actions: [
-          IconButton(
-            tooltip: l10n.commonSignOut,
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthCubit>().signOut(),
-          ),
+        actions: const [
+          ThemeToggleButton(),
+          LocaleToggleButton(),
+          SignOutButton(),
         ],
       ),
-      body: BlocBuilder<ParentDashboardCubit, ParentDashboardState>(
-        builder: (context, state) {
-          switch (state.status) {
-            case ParentStatus.initial:
-            case ParentStatus.loading:
-              return const LoadingView();
-            case ParentStatus.empty:
-              return EmptyView(
-                message: l10n.parentNoChildrenLinked,
-                icon: Icons.family_restroom,
-              );
-            case ParentStatus.error:
-              return ErrorView(
-                message: state.errorMessage ?? l10n.parentCouldNotLoadChildren,
-                onRetry: () => context.read<ParentDashboardCubit>().start(),
-              );
-            case ParentStatus.ready:
-              return _ReadyBody(state: state);
-          }
-        },
+      body: SafeArea(
+        child: BlocBuilder<ParentDashboardCubit, ParentDashboardState>(
+          builder: (context, state) {
+            switch (state.status) {
+              case ParentStatus.initial:
+              case ParentStatus.loading:
+                return const LoadingView();
+              case ParentStatus.empty:
+                return EmptyView(
+                  message: l10n.parentNoChildrenLinked,
+                  icon: Icons.family_restroom,
+                );
+              case ParentStatus.error:
+                return ErrorView(
+                  message: state.errorMessage ?? l10n.parentCouldNotLoadChildren,
+                  onRetry: () => context.read<ParentDashboardCubit>().start(),
+                );
+              case ParentStatus.ready:
+                return _ReadyBody(state: state);
+            }
+          },
+        ),
       ),
     );
   }
@@ -99,7 +102,7 @@ class _ReadyBody extends StatelessWidget {
         if (child != null) ...[
           Card(
             child: ListTile(
-              leading: CircleAvatar(child: Text(child.className)),
+              leading: CircleAvatar(child: Text(classInitials(child.className))),
               title: Text(
                 child.fullName,
                 style: Theme.of(context).textTheme.titleMedium,
