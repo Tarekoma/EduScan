@@ -81,7 +81,7 @@ class _WorkersView extends StatelessWidget {
               children: [
                 if (state.all.isNotEmpty)
                   Text(
-                    l10n.workersCount(state.all.length),
+                    l10n.workersCount(state.filtered.length),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 const SizedBox(height: AppSpacing.sm),

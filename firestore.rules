@@ -193,18 +193,6 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // ---- faceEnrollments (biometric — sensitive) -----------------
-    // Only security enrols and reads embeddings, and only for attendance.
-    // Documents store the numeric descriptor only, never a raw image.
-    match /faceEnrollments/{docId} {
-      allow read: if hasRole('security');
-      allow create, update: if hasRole('security')
-        && request.resource.data.embedding is list
-        && request.resource.data.personId is string
-        && request.resource.data.personType in ['student', 'worker'];
-      allow delete: if hasRole('security') || hasRole('manager');
-    }
-
     // Default deny.
     match /{document=**} {
       allow read, write: if false;

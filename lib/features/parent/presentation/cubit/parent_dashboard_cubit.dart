@@ -78,12 +78,18 @@ class ParentDashboardCubit extends Cubit<ParentDashboardState> {
     _todaySub = _watchToday(personId: studentId, personType: PersonType.student)
         .listen(
           (record) => emit(state.copyWith(today: record, todayLoaded: true)),
-          onError: (Object e, StackTrace s) => emit(
-            state.copyWith(
-              todayLoaded: true,
-              errorMessage: ErrorMapper.map(e, s).message,
-            ),
-          ),
+          onError: (Object e, StackTrace s) {
+            // Signing out revokes the token while these listeners are still
+            // attached, which fires a spurious permission-denied here — not a
+            // real error worth surfacing.
+            if (_authCubit.state.user == null) return;
+            emit(
+              state.copyWith(
+                todayLoaded: true,
+                errorMessage: ErrorMapper.map(e, s).message,
+              ),
+            );
+          },
         );
 
     _historySub =
@@ -93,12 +99,15 @@ class ParentDashboardCubit extends Cubit<ParentDashboardState> {
         ).listen(
           (records) =>
               emit(state.copyWith(history: records, historyLoading: false)),
-          onError: (Object e, StackTrace s) => emit(
-            state.copyWith(
-              historyLoading: false,
-              errorMessage: ErrorMapper.map(e, s).message,
-            ),
-          ),
+          onError: (Object e, StackTrace s) {
+            if (_authCubit.state.user == null) return;
+            emit(
+              state.copyWith(
+                historyLoading: false,
+                errorMessage: ErrorMapper.map(e, s).message,
+              ),
+            );
+          },
         );
   }
 

@@ -80,7 +80,7 @@ class _StudentsView extends StatelessWidget {
               children: [
                 if (state.all.isNotEmpty)
                   Text(
-                    l10n.studentsCount(state.all.length),
+                    l10n.studentsCount(state.filtered.length),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 const SizedBox(height: AppSpacing.sm),

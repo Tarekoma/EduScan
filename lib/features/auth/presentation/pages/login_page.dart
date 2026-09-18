@@ -43,7 +43,7 @@ const _quickAccounts = [
   _QuickAccount(
     'Parent',
     Icons.family_restroom_outlined,
-    'gamal13@gmail.com',
+    'ahmed_hassan12@gmail.com',
     '123456789',
   ),
 ];

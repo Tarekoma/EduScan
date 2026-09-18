@@ -10,7 +10,6 @@ import '../theme/theme_cubit.dart';
 import '../../features/attendance/attendance_injection.dart';
 import '../../features/dashboard/dashboard_injection.dart';
 import '../../features/excel/excel_injection.dart';
-import '../../features/face_recognition/face_recognition_injection.dart';
 import '../../features/auth/auth_injection.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/parent/parent_injection.dart';
@@ -45,7 +44,6 @@ Future<void> configureDependencies() async {
   registerUserManagementDependencies(sl);
   registerDashboardDependencies(sl);
   registerExcelDependencies(sl);
-  registerFaceRecognitionDependencies(sl);
   registerParentDependencies(sl);
   registerPickupDependencies(sl);
   // Eagerly start the session-lifetime pickup alert watcher.

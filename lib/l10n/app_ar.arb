@@ -101,7 +101,6 @@
   "newPickupRequestSnackbar": "طلب استلام جديد: {studentName}",
   "commonView": "عرض",
   "scanQrCodeButton": "مسح رمز QR",
-  "useFaceRecognitionButton": "استخدام التعرف على الوجه",
   "enterIdManually": "أو أدخل المعرف يدويًا",
   "validatorEnterId": "أدخل الرقم.",
   "validatorIdFormat": "أدخل أرقامًا فقط، مثال {prefix}_00125.",
@@ -163,7 +162,7 @@
   "exportTabLabel": "تصدير",
   "importTabLabel": "استيراد",
   "excelAttendanceExportTitle": "تصدير الحضور",
-  "excelExportColumnsHint": "الأعمدة: التاريخ، معرف الشخص، الاسم، نوع الشخص، الحضور، الانصراف، سجّله، وقت التسجيل.",
+  "excelExportColumnsHint": "صف لكل شخص؛ عمودا حضور وانصراف لكل يوم من أيام الفترة المختارة.",
   "dateRangeLabel": "الفترة الزمنية",
   "dateRangeValue": "{start}  –  {end}",
   "exportStudentsButton": "تصدير الطلبة ومشاركة",
@@ -189,15 +188,6 @@
   "excelBadDateTime": "تاريخ/وقت غير صالح \"{date} {time}\".",
   "excelUnknownPersons": "الأكواد دي مش مسجلة في النظام، فتم إيقاف الاستيراد: {ids}. سجّلهم كطلبة أو عاملين الأول، وبعدين حاول تاني.",
   "@excelUnknownPersons": {"placeholders": {"ids": {"type": "String"}}},
-
-  "faceRecognitionTitle": "التعرف على الوجه",
-  "faceMatchDetail": "{personId}  •  تطابق {pct}%\nحضور {inTime}  •  انصراف {outTime}",
-  "faceNotRecordedTitle": "لم يتم التسجيل",
-  "faceTryAgainOrUseQr": "حاول مرة أخرى أو استخدم رمز QR.",
-  "faceUnavailableTitle": "التعرف على الوجه غير مفعّل في هذا الإصدار.",
-  "faceUnavailableDetail": "يستمر تسجيل الحضور بالعمل عبر رموز QR. يمكن إضافة نموذج تعرف على الوجه دون تغيير آلية تسجيل الحضور.",
-  "facePointCamera": "وجّه الكاميرا نحو الشخص للتعرف عليه، ثم أكّد.",
-  "faceNotRecognised": "لم يتم التعرف على الوجه. استخدم رمز QR بدلاً من ذلك.",
 
   "parentMyChildrenTitle": "أبنائي",
   "parentNoChildrenLinked": "لا يوجد أبناء مرتبطون بحسابك بعد.\nيرجى التواصل مع إدارة المدرسة.",
@@ -318,6 +308,5 @@
   "validationCheckOutBeforeCheckIn": "لا يمكن أن يكون وقت الانصراف قبل وقت الحضور.",
   "attendanceRecordNotFound": "سجل الحضور \"{recordId}\" غير موجود.",
   "workerNotFound": "الموظف \"{workerId}\" غير موجود.",
-  "studentNotFound": "الطالب \"{studentId}\" غير موجود.",
-  "faceNotDetected": "لم يتم اكتشاف وجه. حاول مرة أخرى."
+  "studentNotFound": "الطالب \"{studentId}\" غير موجود."
 }

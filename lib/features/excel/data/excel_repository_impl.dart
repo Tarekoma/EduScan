@@ -63,7 +63,6 @@ class ExcelRepositoryImpl implements ExcelRepository {
       toDate: DateKey.of(to),
     );
     final records = allRecords.where((r) => r.personType == personType).toList();
-    final security = await _watchSecurity(UserRole.security).first;
 
     final names = <String, String>{
       if (personType == PersonType.student)
@@ -73,7 +72,13 @@ class ExcelRepositoryImpl implements ExcelRepository {
         for (final w in await _workers.watchWorkers().first)
           w.workerId: w.fullName,
     };
-    final recorders = {for (final u in security) u.uid: u.name};
+
+    // Live check-ins are recorded by security; a manager also shows up here
+    // as the actor on historical attendance imported from Excel.
+    final recorders = <String, String>{
+      for (final role in UserRole.values.where((r) => r.isInternal))
+        for (final u in await _watchSecurity(role).first) u.uid: u.name,
+    };
 
     String recorder(AttendanceRecord r) {
       final uid = r.checkOutRecordedBy ?? r.checkInRecordedBy ?? r.updatedBy;
@@ -95,7 +100,10 @@ class ExcelRepositoryImpl implements ExcelRepository {
         )
         .toList();
 
-    final bytes = _codec.buildAttendanceWorkbook(rows);
+    final bytes = _codec.buildAttendanceWorkbook(
+      rows,
+      dates: DateKey.rangeInclusive(from, to),
+    );
     final stamp = DateFormat('yyyyMMdd').format(from);
     final stamp2 = DateFormat('yyyyMMdd').format(to);
     final kind = personType == PersonType.student ? 'students' : 'workers';

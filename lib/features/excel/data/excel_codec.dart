@@ -14,44 +14,109 @@ import '../domain/repositories/excel_repository.dart';
 class ExcelCodec {
   static final _time = DateFormat('HH:mm');
 
-  static const _attendanceHeaders = [
-    'Date',
-    'Person ID',
-    'Name',
-    'Person Type',
-    'Check-in',
-    'Check-out',
-    'Recorded by',
-    'Recorded at',
-  ];
+  static const _staticHeaders = ['Name', 'Person ID', 'Person Type', 'Recorded by'];
 
-  Uint8List buildAttendanceWorkbook(List<AttendanceExportRow> rows) {
+  static final _headerStyle = CellStyle(
+    bold: true,
+    backgroundColorHex: ExcelColor.grey200,
+    horizontalAlign: HorizontalAlign.Center,
+    verticalAlign: VerticalAlign.Center,
+  );
+
+  /// One row per person, one date per pair of `Check-in`/`Check-out` columns
+  /// (merged header above them shows the date). [rows] is one entry per
+  /// person-per-date; grouped here by [AttendanceExportRow.personId].
+  /// [dates] (`yyyy-MM-dd`, sorted) is every day of the requested range —
+  /// not just the ones with a record — so a day nobody was recorded on still
+  /// gets its own (blank) column pair.
+  Uint8List buildAttendanceWorkbook(
+    List<AttendanceExportRow> rows, {
+    required List<String> dates,
+  }) {
     final book = Excel.createExcel();
     final sheet = book['Attendance'];
     book.setDefaultSheet('Attendance');
     if (book.sheets.containsKey('Sheet1')) book.delete('Sheet1');
 
-    sheet.appendRow(_attendanceHeaders.map(TextCellValue.new).toList());
+    final byPerson = <String, List<AttendanceExportRow>>{};
     for (final r in rows) {
-      sheet.appendRow([
-        TextCellValue(r.date),
-        TextCellValue(r.personId),
-        TextCellValue(r.name),
-        TextCellValue(r.personType.value),
-        TextCellValue(
-          r.checkIn == null ? '' : _time.format(r.checkIn!.toLocal()),
-        ),
-        TextCellValue(
-          r.checkOut == null ? '' : _time.format(r.checkOut!.toLocal()),
-        ),
-        TextCellValue(r.recordedBy),
-        TextCellValue(
-          r.recordedAt == null
-              ? ''
-              : DateFormat('yyyy-MM-dd HH:mm').format(r.recordedAt!.toLocal()),
-        ),
-      ]);
+      (byPerson[r.personId] ??= []).add(r);
     }
+    final personIds = byPerson.keys.toList()..sort();
+
+    for (var c = 0; c < _staticHeaders.length; c++) {
+      final top = CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0);
+      sheet.updateCell(top, TextCellValue(_staticHeaders[c]), cellStyle: _headerStyle);
+      sheet.merge(top, CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 1));
+    }
+
+    for (var i = 0; i < dates.length; i++) {
+      final col = _staticHeaders.length + i * 2;
+      final top = CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0);
+      sheet.updateCell(top, TextCellValue(dates[i]), cellStyle: _headerStyle);
+      sheet.merge(top, CellIndex.indexByColumnRow(columnIndex: col + 1, rowIndex: 0));
+      sheet.updateCell(
+        CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 1),
+        TextCellValue('Check-in'),
+        cellStyle: _headerStyle,
+      );
+      sheet.updateCell(
+        CellIndex.indexByColumnRow(columnIndex: col + 1, rowIndex: 1),
+        TextCellValue('Check-out'),
+        cellStyle: _headerStyle,
+      );
+    }
+
+    var rowIndex = 2;
+    for (final personId in personIds) {
+      final personRows = byPerson[personId]!
+        ..sort((a, b) => a.date.compareTo(b.date));
+      final byDate = {for (final r in personRows) r.date: r};
+      final first = personRows.first;
+
+      var recordedBy = '';
+      for (final r in personRows) {
+        if (r.recordedBy.isNotEmpty) recordedBy = r.recordedBy;
+      }
+
+      sheet.updateCell(
+        CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
+        TextCellValue(first.name),
+      );
+      sheet.updateCell(
+        CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
+        TextCellValue(personId),
+      );
+      sheet.updateCell(
+        CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex),
+        TextCellValue(first.personType.value),
+      );
+      sheet.updateCell(
+        CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex),
+        TextCellValue(recordedBy),
+      );
+
+      for (var i = 0; i < dates.length; i++) {
+        final col = _staticHeaders.length + i * 2;
+        final record = byDate[dates[i]];
+        sheet.updateCell(
+          CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rowIndex),
+          TextCellValue(
+            record?.checkIn == null ? '' : _time.format(record!.checkIn!.toLocal()),
+          ),
+        );
+        sheet.updateCell(
+          CellIndex.indexByColumnRow(columnIndex: col + 1, rowIndex: rowIndex),
+          TextCellValue(
+            record?.checkOut == null ? '' : _time.format(record!.checkOut!.toLocal()),
+          ),
+        );
+      }
+      rowIndex++;
+    }
+
+    sheet.setColumnWidth(0, 22);
+    sheet.setColumnWidth(3, 20);
 
     final bytes = book.save();
     if (bytes == null) {

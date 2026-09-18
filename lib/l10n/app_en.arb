@@ -108,7 +108,6 @@
   "@newPickupRequestSnackbar": {"placeholders": {"studentName": {"type": "String"}}},
   "commonView": "View",
   "scanQrCodeButton": "Scan QR code",
-  "useFaceRecognitionButton": "Use face recognition",
   "enterIdManually": "Or enter an ID manually",
   "validatorEnterId": "Enter the number.",
   "validatorIdFormat": "Enter numbers only, e.g. {prefix}_00125.",
@@ -180,7 +179,7 @@
   "exportTabLabel": "Export",
   "importTabLabel": "Import",
   "excelAttendanceExportTitle": "Attendance export",
-  "excelExportColumnsHint": "Columns: Date, Person ID, Name, Person Type, Check-in, Check-out, Recorded by, Recorded at.",
+  "excelExportColumnsHint": "One row per person; a Check-in/Check-out column pair for every day in the range.",
   "dateRangeLabel": "Date range",
   "dateRangeValue": "{start}  –  {end}",
   "@dateRangeValue": {"placeholders": {"start": {"type": "String"}, "end": {"type": "String"}}},
@@ -215,16 +214,6 @@
   "@excelBadDateTime": {"placeholders": {"date": {"type": "String"}, "time": {"type": "String"}}},
   "excelUnknownPersons": "These IDs aren't registered yet, so the import was blocked: {ids}. Add them as students/workers first, then retry.",
   "@excelUnknownPersons": {"placeholders": {"ids": {"type": "String"}}},
-
-  "faceRecognitionTitle": "Face recognition",
-  "faceMatchDetail": "{personId}  •  {pct}% match\nIn {inTime}  •  Out {outTime}",
-  "@faceMatchDetail": {"placeholders": {"personId": {"type": "String"}, "pct": {"type": "String"}, "inTime": {"type": "String"}, "outTime": {"type": "String"}}},
-  "faceNotRecordedTitle": "Not recorded",
-  "faceTryAgainOrUseQr": "Try again or use the QR code.",
-  "faceUnavailableTitle": "Face recognition is not enabled on this build.",
-  "faceUnavailableDetail": "Attendance continues to work with QR codes. A recognition model can be added without changing the attendance flow.",
-  "facePointCamera": "Point the camera at the person to identify them, then confirm.",
-  "faceNotRecognised": "Face not recognised. Use the QR code instead.",
 
   "parentMyChildrenTitle": "My children",
   "parentNoChildrenLinked": "No children are linked to your account yet.\nPlease contact the school office.",
@@ -366,6 +355,5 @@
   "workerNotFound": "Worker \"{workerId}\" was not found.",
   "@workerNotFound": {"placeholders": {"workerId": {"type": "String"}}},
   "studentNotFound": "Student \"{studentId}\" was not found.",
-  "@studentNotFound": {"placeholders": {"studentId": {"type": "String"}}},
-  "faceNotDetected": "No face detected. Try again."
+  "@studentNotFound": {"placeholders": {"studentId": {"type": "String"}}}
 }

@@ -130,14 +130,6 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
               icon: const Icon(Icons.qr_code_scanner),
               label: Text(l10n.scanQrCodeButton),
             ),
-            if (AppConfig.faceRecognitionEnabled) ...[
-              const SizedBox(height: AppSpacing.sm),
-              OutlinedButton.icon(
-                onPressed: () => context.push(AppRoutes.securityFace),
-                icon: const Icon(Icons.face),
-                label: Text(l10n.useFaceRecognitionButton),
-              ),
-            ],
             const SizedBox(height: AppSpacing.md),
             const Divider(),
             const SizedBox(height: AppSpacing.sm),

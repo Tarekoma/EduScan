@@ -53,12 +53,18 @@ class ParentPickupCubit extends Cubit<ParentPickupState> {
           clearActive: request == null,
         ),
       ),
-      onError: (Object e, StackTrace s) => emit(
-        state.copyWith(
-          status: ParentPickupStatus.ready,
-          errorMessage: ErrorMapper.map(e, s).message,
-        ),
-      ),
+      onError: (Object e, StackTrace s) {
+        // Signing out revokes the token while this listener is still
+        // attached, which fires a spurious permission-denied here — not a
+        // real error worth surfacing.
+        if (_authCubit.state.user == null) return;
+        emit(
+          state.copyWith(
+            status: ParentPickupStatus.ready,
+            errorMessage: ErrorMapper.map(e, s).message,
+          ),
+        );
+      },
     );
     // Non-critical for display: on error this just leaves childState at its
     // fail-safe default (absent), which keeps the request button hidden

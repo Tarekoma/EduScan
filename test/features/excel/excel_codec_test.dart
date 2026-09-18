@@ -18,25 +18,69 @@ Uint8List _sheet(List<List<String>> rows) {
 void main() {
   final codec = ExcelCodec();
 
-  test('buildAttendanceWorkbook writes a header row and data', () {
-    final bytes = codec.buildAttendanceWorkbook([
-      AttendanceExportRow(
-        date: '2026-09-10',
-        personId: 'STU_00001',
-        name: 'Ahmed',
-        personType: PersonType.student,
-        checkIn: DateTime(2026, 9, 10, 7, 42),
-        checkOut: null,
-        recordedBy: 'Sam',
-        recordedAt: DateTime(2026, 9, 10, 7, 42),
-      ),
-    ]);
-    final book = Excel.decodeBytes(bytes);
-    final rows = book.tables['Attendance']!.rows;
-    expect(rows.first.first!.value.toString(), 'Date');
-    expect(rows[1][1]!.value.toString(), 'STU_00001');
-    expect(rows[1][4]!.value.toString(), '07:42');
-  });
+  test(
+    'buildAttendanceWorkbook pivots one row per person, one Check-in/'
+    'Check-out column pair per date',
+    () {
+      final bytes = codec.buildAttendanceWorkbook(
+        [
+          AttendanceExportRow(
+            date: '2026-09-10',
+            personId: 'STU_00001',
+            name: 'Ahmed',
+            personType: PersonType.student,
+            checkIn: DateTime(2026, 9, 10, 7, 42),
+            checkOut: null,
+            recordedBy: 'Sam',
+            recordedAt: DateTime(2026, 9, 10, 7, 42),
+          ),
+          AttendanceExportRow(
+            date: '2026-09-11',
+            personId: 'STU_00001',
+            name: 'Ahmed',
+            personType: PersonType.student,
+            checkIn: DateTime(2026, 9, 11, 7, 50),
+            checkOut: DateTime(2026, 9, 11, 14, 5),
+            recordedBy: '',
+            recordedAt: DateTime(2026, 9, 11, 7, 50),
+          ),
+        ],
+        // Requested range spans a third day with no record at all — it must
+        // still get its own (blank) column pair, not just the dates that
+        // happen to appear in `rows`.
+        dates: const ['2026-09-10', '2026-09-11', '2026-09-12'],
+      );
+      final book = Excel.decodeBytes(bytes);
+      final sheet = book.tables['Attendance']!;
+      String cell(int col, int row) =>
+          sheet
+              .cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row))
+              .value
+              ?.toString() ??
+          '';
+
+      // Header: Name, Person ID, Person Type, Recorded by, then 3 dates x 2 cols.
+      expect(cell(0, 0), 'Name');
+      expect(cell(3, 0), 'Recorded by');
+      expect(cell(4, 0), '2026-09-10');
+      expect(cell(6, 0), '2026-09-11');
+      expect(cell(8, 0), '2026-09-12');
+      expect(cell(4, 1), 'Check-in');
+      expect(cell(5, 1), 'Check-out');
+
+      // One data row for Ahmed; "Recorded by" carries forward the last known
+      // recorder when a later date's record has none of its own.
+      expect(cell(0, 2), 'Ahmed');
+      expect(cell(1, 2), 'STU_00001');
+      expect(cell(3, 2), 'Sam');
+      expect(cell(4, 2), '07:42');
+      expect(cell(5, 2), ''); // no checkout on 09-10
+      expect(cell(6, 2), '07:50');
+      expect(cell(7, 2), '14:05');
+      expect(cell(8, 2), ''); // no record at all on 09-12
+      expect(cell(9, 2), '');
+    },
+  );
 
   test('parseStudents reads headers case-insensitively and reports skips', () {
     final bytes = _sheet([

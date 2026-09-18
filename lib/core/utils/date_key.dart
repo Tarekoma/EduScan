@@ -12,4 +12,15 @@ abstract final class DateKey {
   static String today() => of(DateTime.now());
 
   static DateTime parse(String key) => DateTime.parse(key);
+
+  /// All `yyyy-MM-dd` keys from [from] to [to], inclusive.
+  static List<String> rangeInclusive(DateTime from, DateTime to) {
+    final start = DateTime(from.year, from.month, from.day);
+    final end = DateTime(to.year, to.month, to.day);
+    final keys = <String>[];
+    for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
+      keys.add(of(d));
+    }
+    return keys;
+  }
 }

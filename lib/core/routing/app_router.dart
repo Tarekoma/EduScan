@@ -9,7 +9,6 @@ import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/dashboard/presentation/pages/security_dashboard_page.dart';
 import '../../features/excel/presentation/pages/excel_page.dart';
-import '../../features/face_recognition/presentation/pages/face_attendance_page.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
 import '../../features/pickup/presentation/pages/pickup_requests_page.dart';
 import '../../features/students/presentation/pages/students_page.dart';
@@ -157,10 +156,6 @@ class AppRouter {
         GoRoute(
           path: AppRoutes.securityPickup,
           builder: (_, __) => const PickupRequestsPage(),
-        ),
-        GoRoute(
-          path: AppRoutes.securityFace,
-          builder: (_, __) => const FaceAttendancePage(),
         ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) => AppShell(

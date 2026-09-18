@@ -17,6 +17,5 @@ abstract final class AppConfig {
   /// are disabled.
   static const bool pickupEnabled = true;
   static const bool parentPortalEnabled = true;
-  static const bool faceRecognitionEnabled = false;
   static const bool excelEnabled = true;
 }
