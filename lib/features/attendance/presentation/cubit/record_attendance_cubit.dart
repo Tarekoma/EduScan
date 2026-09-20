@@ -129,6 +129,8 @@ class RecordAttendanceCubit extends Cubit<RecordAttendanceState> {
         status: RecordStatus.success,
         record: record,
         action: effective,
+        person: person,
+        recordedByName: _authCubit.state.user?.name,
       ),
     );
   }

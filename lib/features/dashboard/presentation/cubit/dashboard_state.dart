@@ -47,6 +47,7 @@ class DashboardState extends Equatable {
     this.recorderNames = const {},
     this.typeFilter,
     this.attendanceLoading = false,
+    this.activityLimit = activityFirstPage,
     this.errorMessage,
     this.reportRecords = const [],
     this.reportStatus = DashboardReportStatus.initial,
@@ -61,10 +62,18 @@ class DashboardState extends Equatable {
   final Map<String, String> recorderNames;
   final PersonType? typeFilter;
   final bool attendanceLoading;
+
+  /// How many "recent activity" rows are shown. Starts at [activityFirstPage]
+  /// and grows by [activityPageSize] each time "View more" is tapped, so a
+  /// large roster is never rendered all at once.
+  final int activityLimit;
   final String? errorMessage;
 
+  static const int activityFirstPage = 4;
+  static const int activityPageSize = 8;
+
   /// Date range + one-shot fetch backing the report section (rate-over-time
-  /// chart, class comparison, detailed table). Independent from [date]/[records]
+  /// chart, class comparison). Independent from [date]/[records]
   /// above, which drive the live single-day "recent activity" feed.
   final DateTime reportFrom;
   final DateTime reportTo;
@@ -78,6 +87,17 @@ class DashboardState extends Equatable {
     records: records,
     typeFilter: typeFilter,
   );
+
+  /// The people behind one summary card, for the drill-down sheet. Derived
+  /// from the same live [records] as [stats], so it updates with them.
+  List<BreakdownEntry> breakdown(AttendanceCategory category) =>
+      AttendanceBreakdown.compute(
+        category: category,
+        students: students,
+        workers: workers,
+        records: records,
+        typeFilter: typeFilter,
+      );
 
   List<CheckInPoint> get chart =>
       DashboardChart.cumulativeCheckIns(records, typeFilter: typeFilter);
@@ -135,6 +155,7 @@ class DashboardState extends Equatable {
     PersonType? typeFilter,
     bool clearTypeFilter = false,
     bool? attendanceLoading,
+    int? activityLimit,
     String? errorMessage,
     DateTime? reportFrom,
     DateTime? reportTo,
@@ -151,6 +172,7 @@ class DashboardState extends Equatable {
       recorderNames: recorderNames ?? this.recorderNames,
       typeFilter: clearTypeFilter ? null : (typeFilter ?? this.typeFilter),
       attendanceLoading: attendanceLoading ?? this.attendanceLoading,
+      activityLimit: activityLimit ?? this.activityLimit,
       errorMessage: errorMessage ?? this.errorMessage,
       reportFrom: reportFrom ?? this.reportFrom,
       reportTo: reportTo ?? this.reportTo,
@@ -170,6 +192,7 @@ class DashboardState extends Equatable {
     recorderNames,
     typeFilter,
     attendanceLoading,
+    activityLimit,
     errorMessage,
     reportFrom,
     reportTo,

@@ -34,7 +34,7 @@ class ExcelCubit extends Cubit<ExcelState> {
     DateTime to,
     PersonType personType,
   ) async {
-    emit(state.copyWith(exporting: true, clearMessages: true));
+    emit(state.copyWith(exportingType: personType, clearMessages: true));
     try {
       final file = await _repo.exportAttendance(
         from: from,
@@ -44,13 +44,16 @@ class ExcelCubit extends Cubit<ExcelState> {
       await _files.shareBytes(file.bytes, file.filename);
       emit(
         state.copyWith(
-          exporting: false,
+          clearExporting: true,
           info: appStrings.excelExportedFile(file.filename),
         ),
       );
     } catch (e, s) {
       emit(
-        state.copyWith(exporting: false, error: ErrorMapper.map(e, s).message),
+        state.copyWith(
+          clearExporting: true,
+          error: ErrorMapper.map(e, s).message,
+        ),
       );
     }
   }
@@ -70,9 +73,7 @@ class ExcelCubit extends Cubit<ExcelState> {
         case _ImportKind.workers:
           emit(state.copyWith(workerPreview: _repo.parseWorkers(bytes)));
         case _ImportKind.attendance:
-          emit(
-            state.copyWith(attendancePreview: _repo.parseAttendance(bytes)),
-          );
+          emit(state.copyWith(attendancePreview: _repo.parseAttendance(bytes)));
       }
     } catch (e, s) {
       emit(state.copyWith(error: ErrorMapper.map(e, s).message));

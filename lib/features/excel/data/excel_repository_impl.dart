@@ -62,7 +62,9 @@ class ExcelRepositoryImpl implements ExcelRepository {
       fromDate: DateKey.of(from),
       toDate: DateKey.of(to),
     );
-    final records = allRecords.where((r) => r.personType == personType).toList();
+    final records = allRecords
+        .where((r) => r.personType == personType)
+        .toList();
 
     final names = <String, String>{
       if (personType == PersonType.student)
@@ -154,7 +156,10 @@ class ExcelRepositoryImpl implements ExcelRepository {
         final batch = _firestore.batch();
         final slice = rows.skip(i).take(_batchLimit).toList();
         for (var j = 0; j < slice.length; j++) {
-          final id = PersonId.format(PersonType.student, startAfter + i + j + 1);
+          final id = PersonId.format(
+            PersonType.student,
+            startAfter + i + j + 1,
+          );
           ids.add(id);
           batch.set(
             studentsCol.doc(id),
@@ -298,7 +303,9 @@ class ExcelRepositoryImpl implements ExcelRepository {
       ...await _missingIds(FirestoreCollections.workers, workerIds),
     ]..sort();
     if (missing.isNotEmpty) {
-      throw ValidationException(appStrings.excelUnknownPersons(missing.join(', ')));
+      throw ValidationException(
+        appStrings.excelUnknownPersons(missing.join(', ')),
+      );
     }
   }
 

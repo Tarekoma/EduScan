@@ -131,9 +131,20 @@ class _ResultBar extends StatelessWidget {
         scheme.onSecondaryContainer,
         () {
           final r = state.record!;
-          final verb = r.checkOut != null ? l10n.checkedOutTitle : l10n.checkedInTitle;
+          final verb = r.checkOut != null
+              ? l10n.checkedOutTitle
+              : l10n.checkedInTitle;
           final time = TimeFormat.time(r.checkOut ?? r.checkIn);
-          return l10n.scanResultLine(verb, r.personId, time);
+          final name = state.person?.displayName;
+          final recordedBy = state.recordedByName;
+          return [
+            if (name != null)
+              l10n.personNameIdLabel(name, r.personId)
+            else
+              r.personId,
+            l10n.scanResultLine(verb, time),
+            if (recordedBy != null) l10n.attendanceRecordedBy(recordedBy),
+          ].join('\n');
         }(),
       ),
     };
@@ -148,7 +159,9 @@ class _ResultBar extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              Expanded(child: Text(text, style: TextStyle(color: fg))),
+              Expanded(
+                child: Text(text, style: TextStyle(color: fg)),
+              ),
               if (state.status == RecordStatus.success ||
                   state.status == RecordStatus.failure)
                 TextButton(

@@ -7,7 +7,6 @@ import '../../features/attendance/presentation/pages/scan_attendance_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
-import '../../features/dashboard/presentation/pages/security_dashboard_page.dart';
 import '../../features/excel/presentation/pages/excel_page.dart';
 import '../../features/parent/presentation/pages/parent_dashboard_page.dart';
 import '../../features/pickup/presentation/pages/pickup_requests_page.dart';
@@ -49,6 +48,11 @@ class AppRouter {
         label: l10n.navWorkers,
         icon: Icons.badge_outlined,
         selectedIcon: Icons.badge,
+      ),
+      ShellDestination(
+        label: l10n.navExcel,
+        icon: Icons.table_chart_outlined,
+        selectedIcon: Icons.table_chart,
       ),
     ];
   }
@@ -102,6 +106,16 @@ class AppRouter {
         icon: Icons.badge_outlined,
         selectedIcon: Icons.badge,
       ),
+      ShellDestination(
+        label: l10n.navUsers,
+        icon: Icons.manage_accounts_outlined,
+        selectedIcon: Icons.manage_accounts,
+      ),
+      ShellDestination(
+        label: l10n.navExcel,
+        icon: Icons.table_chart_outlined,
+        selectedIcon: Icons.table_chart,
+      ),
     ];
   }
 
@@ -133,10 +147,7 @@ class AppRouter {
         }
       },
       routes: [
-        GoRoute(
-          path: AppRoutes.splash,
-          builder: (_, __) => const SplashPage(),
-        ),
+        GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashPage()),
         GoRoute(
           path: AppRoutes.login,
           // Forced LTR regardless of the app's selected locale: the login
@@ -175,7 +186,7 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.securityDashboard,
-                  builder: (_, __) => const SecurityDashboardPage(),
+                  builder: (_, __) => const DashboardPage(),
                 ),
               ],
             ),
@@ -192,6 +203,15 @@ class AppRouter {
                 GoRoute(
                   path: AppRoutes.securityWorkers,
                   builder: (_, __) => const WorkersPage(readOnly: true),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.securityExcel,
+                  // Security may export but never import.
+                  builder: (_, __) => const ExcelPage(exportOnly: true),
                 ),
               ],
             ),
@@ -263,7 +283,7 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.supervisorStudents,
-                  builder: (_, __) => const StudentsPage(readOnly: true),
+                  builder: (_, __) => const StudentsPage(canDelete: false),
                 ),
               ],
             ),
@@ -271,7 +291,26 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.supervisorWorkers,
-                  builder: (_, __) => const WorkersPage(readOnly: true),
+                  builder: (_, __) => const WorkersPage(canDelete: false),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.supervisorUsers,
+                  builder: (_, __) => const UsersPage(
+                    canDelete: false,
+                    showSupervisors: false,
+                  ),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: AppRoutes.supervisorExcel,
+                  builder: (_, __) => const ExcelPage(),
                 ),
               ],
             ),

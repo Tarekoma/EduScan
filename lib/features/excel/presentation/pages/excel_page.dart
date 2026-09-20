@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection.dart';
+import '../../../../core/enums/person_type.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/time_format.dart';
@@ -13,22 +14,27 @@ import '../../../../core/widgets/theme_toggle_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../cubit/excel_cubit.dart';
 
-/// Manager screen: export attendance to Excel and import the institution's
-/// existing student roster / attendance history.
+/// Export attendance to Excel and import the institution's existing student
+/// roster / attendance history (manager and supervisor). With [exportOnly]
+/// (security) the import tab is not shown at all.
 class ExcelPage extends StatelessWidget {
-  const ExcelPage({super.key});
+  const ExcelPage({super.key, this.exportOnly = false});
+
+  final bool exportOnly;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<ExcelCubit>(),
-      child: const _ExcelView(),
+      child: _ExcelView(exportOnly: exportOnly),
     );
   }
 }
 
 class _ExcelView extends StatefulWidget {
-  const _ExcelView();
+  const _ExcelView({required this.exportOnly});
+
+  final bool exportOnly;
 
   @override
   State<_ExcelView> createState() => _ExcelViewState();
@@ -44,7 +50,7 @@ class _ExcelViewState extends State<_ExcelView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return DefaultTabController(
-      length: 2,
+      length: widget.exportOnly ? 1 : 2,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 76,
@@ -62,7 +68,7 @@ class _ExcelViewState extends State<_ExcelView> {
           bottom: TabBar(
             tabs: [
               Tab(text: l10n.exportTabLabel),
-              Tab(text: l10n.importTabLabel),
+              if (!widget.exportOnly) Tab(text: l10n.importTabLabel),
             ],
           ),
         ),
@@ -76,7 +82,10 @@ class _ExcelViewState extends State<_ExcelView> {
             }
           },
           builder: (context, state) => TabBarView(
-            children: [_exportTab(context, state), _importTab(context, state)],
+            children: [
+              _exportTab(context, state),
+              if (!widget.exportOnly) _importTab(context, state),
+            ],
           ),
         ),
       ),
@@ -100,7 +109,10 @@ class _ExcelViewState extends State<_ExcelView> {
             leading: const Icon(Icons.date_range),
             title: Text(l10n.dateRangeLabel),
             subtitle: Text(
-              l10n.dateRangeValue(TimeFormat.date(_range.start), TimeFormat.date(_range.end)),
+              l10n.dateRangeValue(
+                TimeFormat.date(_range.start),
+                TimeFormat.date(_range.end),
+              ),
             ),
             trailing: const Icon(Icons.edit),
             onTap: () async {
@@ -119,21 +131,25 @@ class _ExcelViewState extends State<_ExcelView> {
         PrimaryButton(
           label: l10n.exportStudentsButton,
           icon: Icons.file_download,
-          isLoading: state.exporting,
-          onPressed: () => context.read<ExcelCubit>().exportStudentAttendance(
-            _range.start,
-            _range.end,
-          ),
+          isLoading: state.exportingType == PersonType.student,
+          onPressed: state.busy
+              ? null
+              : () => context.read<ExcelCubit>().exportStudentAttendance(
+                  _range.start,
+                  _range.end,
+                ),
         ),
         const SizedBox(height: AppSpacing.sm),
         PrimaryButton(
           label: l10n.exportWorkersButton,
           icon: Icons.file_download,
-          isLoading: state.exporting,
-          onPressed: () => context.read<ExcelCubit>().exportWorkerAttendance(
-            _range.start,
-            _range.end,
-          ),
+          isLoading: state.exportingType == PersonType.worker,
+          onPressed: state.busy
+              ? null
+              : () => context.read<ExcelCubit>().exportWorkerAttendance(
+                  _range.start,
+                  _range.end,
+                ),
         ),
       ],
     );

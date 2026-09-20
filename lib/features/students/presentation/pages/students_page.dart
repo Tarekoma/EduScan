@@ -19,25 +19,28 @@ import '../cubit/students_cubit.dart';
 import 'student_attendance_details_page.dart';
 import 'student_form_page.dart';
 
-/// Students list. [readOnly] hides all mutation actions (supervisor view).
+/// Students list. [readOnly] hides all mutation actions (security view);
+/// [canDelete] hides only the delete action (supervisor view).
 class StudentsPage extends StatelessWidget {
-  const StudentsPage({super.key, this.readOnly = false});
+  const StudentsPage({super.key, this.readOnly = false, this.canDelete = true});
 
   final bool readOnly;
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<StudentsCubit>()..start(),
-      child: _StudentsView(readOnly: readOnly),
+      child: _StudentsView(readOnly: readOnly, canDelete: canDelete),
     );
   }
 }
 
 class _StudentsView extends StatelessWidget {
-  const _StudentsView({required this.readOnly});
+  const _StudentsView({required this.readOnly, required this.canDelete});
 
   final bool readOnly;
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +50,9 @@ class _StudentsView extends StatelessWidget {
         toolbarHeight: 76,
         title: PageHeader(
           title: l10n.studentsPageTitle,
-          subtitle: readOnly ? l10n.studentsViewSubtitle : l10n.studentsManageSubtitle,
+          subtitle: readOnly
+              ? l10n.studentsViewSubtitle
+              : l10n.studentsManageSubtitle,
         ),
         actions: [
           if (context.isMobile) ...[
@@ -73,21 +78,45 @@ class _StudentsView extends StatelessWidget {
             ..showSnackBar(SnackBar(content: Text(state.actionError!)));
         },
         builder: (context, state) {
-          return Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (state.all.isNotEmpty)
-                  Text(
-                    l10n.studentsCount(state.filtered.length),
-                    style: Theme.of(context).textTheme.titleSmall,
+          // The count + search/filter header scrolls away with the content and
+          // floats back in on the first scroll up; the list below stays lazy.
+          return NestedScrollView(
+            headerSliverBuilder: (context, _) => [
+              SliverFloatingHeader(
+                child: ColoredBox(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (state.all.isNotEmpty)
+                          Text(
+                            l10n.studentsCount(state.filtered.length),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _FilterRow(state: state),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                    ),
                   ),
-                const SizedBox(height: AppSpacing.sm),
-                _FilterRow(state: state),
-                const SizedBox(height: AppSpacing.md),
-                Expanded(child: _buildList(context, state)),
-              ],
+                ),
+              ),
+            ],
+            body: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: _buildList(context, state),
             ),
           );
         },
@@ -117,15 +146,22 @@ class _StudentsView extends StatelessWidget {
         return context.isMobile
             ? ListView.separated(
                 itemCount: students.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, i) => _StudentCard(
                   student: students[i],
                   readOnly: readOnly,
                   onTap: () => _openDetails(context, students[i]),
                   onShowQr: () => _showQr(context, students[i]),
-                  onEdit: () => _openForm(context, existingId: students[i].studentId),
-                  onDelete: () =>
-                      _confirmDelete(context, students[i].studentId, students[i].fullName),
+                  onEdit: () =>
+                      _openForm(context, existingId: students[i].studentId),
+                  onDelete: !canDelete
+                      ? null
+                      : () => _confirmDelete(
+                          context,
+                          students[i].studentId,
+                          students[i].fullName,
+                        ),
                 ),
               )
             : _StudentsTable(
@@ -134,7 +170,9 @@ class _StudentsView extends StatelessWidget {
                 onTap: (s) => _openDetails(context, s),
                 onShowQr: (s) => _showQr(context, s),
                 onEdit: (s) => _openForm(context, existingId: s.studentId),
-                onDelete: (s) => _confirmDelete(context, s.studentId, s.fullName),
+                onDelete: !canDelete
+                    ? null
+                    : (s) => _confirmDelete(context, s.studentId, s.fullName),
               );
     }
   }
@@ -217,7 +255,8 @@ class _FilterRow extends StatelessWidget {
           onSelected: cubit.filterByClass,
           dropdownMenuEntries: [
             DropdownMenuEntry(value: null, label: l10n.allClassesLabel),
-            for (final c in state.classNames) DropdownMenuEntry(value: c, label: c),
+            for (final c in state.classNames)
+              DropdownMenuEntry(value: c, label: c),
           ],
         ),
       ],
@@ -240,7 +279,7 @@ class _StudentCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback onShowQr;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -267,10 +306,14 @@ class _StudentCard extends StatelessWidget {
             ),
             if (!readOnly)
               PopupMenuButton<String>(
-                onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
+                onSelected: (v) => v == 'edit' ? onEdit() : onDelete?.call(),
                 itemBuilder: (_) => [
                   PopupMenuItem(value: 'edit', child: Text(l10n.commonEdit)),
-                  PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
+                  if (onDelete != null)
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(l10n.commonDelete),
+                    ),
                 ],
               ),
           ],
@@ -295,7 +338,7 @@ class _StudentsTable extends StatelessWidget {
   final ValueChanged<Student> onTap;
   final ValueChanged<Student> onShowQr;
   final ValueChanged<Student> onEdit;
-  final ValueChanged<Student> onDelete;
+  final ValueChanged<Student>? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -316,9 +359,18 @@ class _StudentsTable extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Expanded(flex: 3, child: Text(l10n.tableHeaderStudent, style: headerStyle)),
-                Expanded(flex: 2, child: Text(l10n.tableHeaderStudentId, style: headerStyle)),
-                Expanded(flex: 2, child: Text(l10n.tableHeaderClass, style: headerStyle)),
+                Expanded(
+                  flex: 3,
+                  child: Text(l10n.tableHeaderStudent, style: headerStyle),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(l10n.tableHeaderStudentId, style: headerStyle),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(l10n.tableHeaderClass, style: headerStyle),
+                ),
                 const SizedBox(width: 96),
               ],
             ),
@@ -374,11 +426,19 @@ class _StudentsTable extends StatelessWidget {
                               ),
                               if (!readOnly)
                                 PopupMenuButton<String>(
-                                  onSelected: (v) =>
-                                      v == 'edit' ? onEdit(s) : onDelete(s),
+                                  onSelected: (v) => v == 'edit'
+                                      ? onEdit(s)
+                                      : onDelete?.call(s),
                                   itemBuilder: (_) => [
-                                    PopupMenuItem(value: 'edit', child: Text(l10n.commonEdit)),
-                                    PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Text(l10n.commonEdit),
+                                    ),
+                                    if (onDelete != null)
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text(l10n.commonDelete),
+                                      ),
                                   ],
                                 ),
                             ],

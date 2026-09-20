@@ -25,7 +25,8 @@ enum UserRole {
   /// Only security guards may record attendance.
   bool get canRecordAttendance => this == UserRole.security;
 
-  /// Only the manager may manage students, workers and security accounts.
+  /// Only the manager has full control (including deletion). The supervisor
+  /// may add and edit people but never delete; that is enforced in the rules.
   bool get canManagePeople => this == UserRole.manager;
 
   /// Only security may acknowledge / complete pickup requests.

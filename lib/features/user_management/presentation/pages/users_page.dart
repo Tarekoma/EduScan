@@ -16,17 +16,27 @@ import '../../../auth/domain/entities/app_user.dart';
 import '../cubit/user_management_cubit.dart';
 import 'create_internal_page.dart';
 import 'create_parent_page.dart';
+import 'parent_details_page.dart';
 import 'student_multi_select_page.dart';
 
-/// Manager screen for administering accounts, one tab per role.
+/// Screen for administering accounts, one tab per role. The manager sees every
+/// role and may delete; the supervisor passes [canDelete] false and
+/// [showSupervisors] false (security and parent accounts only, no deletion).
 class UsersPage extends StatelessWidget {
-  const UsersPage({super.key});
+  const UsersPage({
+    super.key,
+    this.canDelete = true,
+    this.showSupervisors = true,
+  });
+
+  final bool canDelete;
+  final bool showSupervisors;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return DefaultTabController(
-      length: 3,
+      length: showSupervisors ? 3 : 2,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 76,
@@ -45,15 +55,16 @@ class UsersPage extends StatelessWidget {
             tabs: [
               Tab(text: l10n.tabParents),
               Tab(text: l10n.tabSecurity),
-              Tab(text: l10n.tabSupervisors),
+              if (showSupervisors) Tab(text: l10n.tabSupervisors),
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            _RoleTab(role: UserRole.parent),
-            _RoleTab(role: UserRole.security),
-            _RoleTab(role: UserRole.supervisor),
+            _RoleTab(role: UserRole.parent, canDelete: canDelete),
+            _RoleTab(role: UserRole.security, canDelete: canDelete),
+            if (showSupervisors)
+              _RoleTab(role: UserRole.supervisor, canDelete: canDelete),
           ],
         ),
       ),
@@ -62,23 +73,25 @@ class UsersPage extends StatelessWidget {
 }
 
 class _RoleTab extends StatelessWidget {
-  const _RoleTab({required this.role});
+  const _RoleTab({required this.role, required this.canDelete});
 
   final UserRole role;
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<UserManagementCubit>()..start(role),
-      child: _RoleTabView(role: role),
+      child: _RoleTabView(role: role, canDelete: canDelete),
     );
   }
 }
 
 class _RoleTabView extends StatelessWidget {
-  const _RoleTabView({required this.role});
+  const _RoleTabView({required this.role, required this.canDelete});
 
   final UserRole role;
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +128,11 @@ class _RoleTabView extends StatelessWidget {
                 itemCount: state.users.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (context, i) =>
-                    _UserTile(user: state.users[i], role: role),
+                    _UserTile(
+                      user: state.users[i],
+                      role: role,
+                      canDelete: canDelete,
+                    ),
               );
           }
         },
@@ -139,16 +156,28 @@ class _RoleTabView extends StatelessWidget {
 }
 
 class _UserTile extends StatelessWidget {
-  const _UserTile({required this.user, required this.role});
+  const _UserTile({
+    required this.user,
+    required this.role,
+    required this.canDelete,
+  });
 
   final AppUser user;
   final UserRole role;
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<UserManagementCubit>();
     final l10n = AppLocalizations.of(context)!;
     return ListTile(
+      onTap: role == UserRole.parent
+          ? () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ParentDetailsPage(parent: user),
+              ),
+            )
+          : null,
       title: Text(user.name),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,6 +200,8 @@ class _UserTile extends StatelessWidget {
             value: user.isActive,
             onChanged: (v) => cubit.setActive(user.uid, v),
           ),
+          // Nothing to offer: only "delete" would remain for a non-parent.
+          if (role == UserRole.parent || canDelete)
           PopupMenuButton<String>(
             onSelected: (v) async {
               if (v == 'links') {
@@ -198,7 +229,8 @@ class _UserTile extends StatelessWidget {
                   value: 'links',
                   child: Text(l10n.editLinkedChildrenMenuItem),
                 ),
-              PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
+              if (canDelete)
+                PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
             ],
           ),
         ],

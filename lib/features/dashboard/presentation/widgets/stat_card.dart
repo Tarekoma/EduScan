@@ -13,6 +13,7 @@ class StatCard extends StatelessWidget {
     this.tone,
     this.trendLabel,
     this.trendPositive,
+    this.onTap,
   });
 
   /// Convenience constructor for integer counts (the dashboard's original
@@ -25,6 +26,7 @@ class StatCard extends StatelessWidget {
     this.tone,
     this.trendLabel,
     this.trendPositive,
+    this.onTap,
   }) : value = '$value';
 
   final String label;
@@ -38,6 +40,10 @@ class StatCard extends StatelessWidget {
   /// Colours [trendLabel] green when true, red when false, neutral when null.
   final bool? trendPositive;
 
+  /// When set the whole card is tappable (ripple + a small chevron beside the
+  /// value) — used for the dashboard's drill-down cards.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -48,43 +54,61 @@ class StatCard extends StatelessWidget {
       null => scheme.onSurfaceVariant,
     };
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    label,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    overflow: TextOverflow.ellipsis,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(icon, color: accent, size: 20),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  // Affordance for tappable cards; flips itself in RTL.
+                  if (onTap != null)
+                    Icon(
+                      Directionality.of(context) == TextDirection.rtl
+                          ? Icons.chevron_left
+                          : Icons.chevron_right,
+                      size: 20,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                ],
+              ),
+              if (trendLabel != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  trendLabel!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: trendColor,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                Icon(icon, color: accent, size: 20),
               ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            if (trendLabel != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                trendLabel!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: trendColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -16,14 +16,16 @@ import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../attendance/presentation/attendance_status_display.dart';
 import '../cubit/dashboard_cubit.dart';
+import '../../domain/attendance_breakdown.dart';
+import '../widgets/attendance_drill_down_sheet.dart';
 import '../widgets/attendance_rate_chart.dart';
 import '../widgets/class_comparison_list.dart';
-import '../widgets/detailed_attendance_table.dart';
 import '../widgets/stat_card.dart';
 
-/// Shared dashboard + attendance-reports view for managers and supervisors.
+/// Dashboard + attendance-reports view shared by managers, supervisors and
+/// security (all read-only here).
 /// Top section is a live "today" snapshot; below it is a date-range report
-/// (rate over time, per-class comparison, detailed table) built from the
+/// (rate over time, per-class comparison) built from the
 /// same real attendance records via [AttendanceReportStats].
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -50,7 +52,8 @@ class _DashboardView extends StatelessWidget {
         }
         if (state.status == DashboardStatus.error) {
           return ErrorView(
-            message: state.errorMessage ??
+            message:
+                state.errorMessage ??
                 AppLocalizations.of(context)!.dashboardCouldNotLoad,
             onRetry: () => context.read<DashboardCubit>().start(),
           );
@@ -70,55 +73,61 @@ class _Content extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: PageHeader(
-                title: l10n.dashboardTitle,
-                subtitle: l10n.dashboardSubtitle,
-              ),
-            ),
-            if (context.isMobile) ...[
-              const ThemeToggleButton(),
-              const LocaleToggleButton(),
-              const SignOutButton(),
-            ],
+    final header = PageHeader(
+      title: l10n.dashboardTitle,
+      subtitle: l10n.dashboardSubtitle,
+    );
+
+    return Scaffold(
+      appBar: context.isMobile
+          ? AppBar(
+              toolbarHeight: 76,
+              title: header,
+              actions: const [
+                ThemeToggleButton(),
+                LocaleToggleButton(),
+                SignOutButton(),
+              ],
+            )
+          : null,
+      body: ListView(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        children: [
+          if (!context.isMobile) ...[
+            header,
+            const SizedBox(height: AppSpacing.md),
           ],
-        ),
-        const SizedBox(height: AppSpacing.md),
 
-        TodaySnapshotSection(state: state),
+          _TodaySnapshotSection(state: state),
 
-        const SizedBox(height: AppSpacing.xl),
-        const Divider(),
-        const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.xl),
+          const Divider(),
+          const SizedBox(height: AppSpacing.md),
 
-        // --- Reports --------------------------------------------------------
-        SectionHeader(title: l10n.sectionAttendanceReports),
-        const SizedBox(height: AppSpacing.sm),
-        _ReportRangeBar(state: state),
-        const SizedBox(height: AppSpacing.md),
-        _ReportBody(state: state),
-      ],
+          // --- Reports ------------------------------------------------------
+          SectionHeader(title: l10n.sectionAttendanceReports),
+          const SizedBox(height: AppSpacing.sm),
+          _ReportRangeBar(state: state),
+          const SizedBox(height: AppSpacing.md),
+          _ReportBody(state: state),
+        ],
+      ),
     );
   }
 }
 
 /// The "Today's snapshot" stat grid plus the "Recent activity" list — the
-/// live, same-day view shared by the manager/supervisor [DashboardPage] and
-/// the read-only security-role dashboard tab.
-class TodaySnapshotSection extends StatelessWidget {
-  const TodaySnapshotSection({super.key, required this.state});
+/// live, same-day view at the top of [DashboardPage].
+class _TodaySnapshotSection extends StatelessWidget {
+  const _TodaySnapshotSection({required this.state});
 
   final DashboardState state;
 
   @override
   Widget build(BuildContext context) {
     final stats = state.stats;
+    // Computed once: it is sorted/mapped on every access.
+    final activity = state.activity;
     final l10n = AppLocalizations.of(context)!;
     final statColumns = responsiveValue(
       context,
@@ -151,23 +160,39 @@ class TodaySnapshotSection extends StatelessWidget {
               label: l10n.checkedInTitle,
               value: stats.checkedIn,
               icon: Icons.login,
+              onTap: () => AttendanceDrillDownSheet.show(
+                context,
+                AttendanceCategory.checkedIn,
+              ),
             ),
             StatCard.count(
               label: l10n.statCurrentlyInside,
               value: stats.currentlyInside,
               icon: Icons.meeting_room,
               tone: Theme.of(context).colorScheme.tertiary,
+              onTap: () => AttendanceDrillDownSheet.show(
+                context,
+                AttendanceCategory.currentlyInside,
+              ),
             ),
             StatCard.count(
               label: l10n.checkedOutTitle,
               value: stats.checkedOut,
               icon: Icons.logout,
+              onTap: () => AttendanceDrillDownSheet.show(
+                context,
+                AttendanceCategory.checkedOut,
+              ),
             ),
             StatCard.count(
               label: l10n.attendanceStateAbsent,
               value: stats.absent,
               icon: Icons.person_off,
               tone: AppColors.danger,
+              onTap: () => AttendanceDrillDownSheet.show(
+                context,
+                AttendanceCategory.absent,
+              ),
             ),
           ],
         ),
@@ -185,10 +210,22 @@ class TodaySnapshotSection extends StatelessWidget {
             padding: EdgeInsets.all(AppSpacing.lg),
             child: Center(child: CircularProgressIndicator()),
           )
-        else if (state.activity.isEmpty)
+        else if (activity.isEmpty)
           EmptyView(message: l10n.dashboardNoAttendanceForDay)
-        else
-          ...state.activity.map((item) => _ActivityTile(item: item)),
+        else ...[
+          ...activity
+              .take(state.activityLimit)
+              .map((item) => _ActivityTile(item: item)),
+          if (activity.length > state.activityLimit)
+            Center(
+              child: TextButton.icon(
+                onPressed: () =>
+                    context.read<DashboardCubit>().showMoreActivity(),
+                icon: const Icon(Icons.expand_more),
+                label: Text(l10n.commonViewMore),
+              ),
+            ),
+        ],
       ],
     );
   }
@@ -220,50 +257,18 @@ class _ReportBody extends StatelessWidget {
     }
 
     final report = state.report;
-    final columns = responsiveValue(context, mobile: 1, tablet: 3, desktop: 3);
 
     return Column(
       children: [
         if (state.students.isEmpty)
           EmptyView(message: l10n.dashboardNoStudentsYet)
         else ...[
-          GridView.count(
-            crossAxisCount: columns,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: AppSpacing.sm,
-            crossAxisSpacing: AppSpacing.sm,
-            childAspectRatio: columns == 1 ? 2.6 : 1.7,
-            children: [
-              StatCard.count(
-                label: l10n.statFrequentlyAbsent,
-                value: report.chronicAbsenceCount,
-                icon: Icons.person_off_outlined,
-                tone: AppColors.danger,
-                trendLabel: report.totalDays == 0
-                    ? null
-                    : l10n.dashboardMissedDays(
-                        report.chronicAbsenceThresholdDays,
-                        report.totalDays,
-                      ),
-              ),
-              StatCard.count(
-                label: l10n.statPerfectAttendance,
-                value: report.perfectAttendanceCount,
-                icon: Icons.emoji_events_outlined,
-                tone: AppColors.info,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
           AttendanceRateChart(
             points: report.dailyRates,
             totalStudents: state.students.length,
           ),
           const SizedBox(height: AppSpacing.md),
           ClassComparisonList(rows: report.perClass),
-          const SizedBox(height: AppSpacing.md),
-          DetailedAttendanceTable(rows: report.perClass),
         ],
       ],
     );
@@ -302,8 +307,14 @@ class _TodayFilterBar extends StatelessWidget {
           showSelectedIcon: false,
           segments: [
             ButtonSegment(value: null, label: Text(l10n.filterAll)),
-            ButtonSegment(value: PersonType.student, label: Text(l10n.filterStudents)),
-            ButtonSegment(value: PersonType.worker, label: Text(l10n.filterWorkers)),
+            ButtonSegment(
+              value: PersonType.student,
+              label: Text(l10n.filterStudents),
+            ),
+            ButtonSegment(
+              value: PersonType.worker,
+              label: Text(l10n.filterWorkers),
+            ),
           ],
           selected: {state.typeFilter},
           onSelectionChanged: (s) => cubit.setTypeFilter(s.first),
@@ -378,7 +389,10 @@ class _ActivityTile extends StatelessWidget {
             ),
           ),
           isThreeLine: true,
-          trailing: StatusBadge(label: derived.label(context), tone: derived.tone),
+          trailing: StatusBadge(
+            label: derived.label(context),
+            tone: derived.tone,
+          ),
         ),
       ),
     );

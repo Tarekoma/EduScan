@@ -43,31 +43,15 @@ class DailyRatePoint {
 /// [AttendanceRecord]/`AttendanceState.absent`).
 class AttendanceReportStats {
   const AttendanceReportStats({
-    required this.perfectAttendanceCount,
-    required this.chronicAbsenceCount,
-    required this.chronicAbsenceThresholdDays,
     required this.totalDays,
     required this.perClass,
     required this.dailyRates,
   });
 
   const AttendanceReportStats.empty()
-    : perfectAttendanceCount = 0,
-      chronicAbsenceCount = 0,
-      chronicAbsenceThresholdDays = 0,
-      totalDays = 0,
+    : totalDays = 0,
       perClass = const [],
       dailyRates = const [];
-
-  /// Students with zero absences across the whole range.
-  final int perfectAttendanceCount;
-
-  /// Students absent on at least [chronicAbsenceThresholdDays] of the days in
-  /// range (a fixed 20% cut-off — the closest thing to Figma's "most absent
-  /// students" tile that is derivable from real per-day presence, since there
-  /// is no separate "flagged" field in the schema).
-  final int chronicAbsenceCount;
-  final int chronicAbsenceThresholdDays;
 
   final int totalDays;
   final List<ClassAttendanceRow> perClass;
@@ -89,55 +73,39 @@ class AttendanceReportStats {
     }
 
     final totalDays = dateKeys.length;
-    final absenceCountByStudent = <String, int>{
-      for (final s in students)
-        s.studentId:
-            totalDays - (presentDatesByStudent[s.studentId]?.length ?? 0),
-    };
-
-    final perfectAttendanceCount = absenceCountByStudent.values
-        .where((a) => a == 0)
-        .length;
-
-    final chronicThreshold = (totalDays * 0.2).ceil().clamp(1, totalDays);
-    final chronicAbsenceCount = absenceCountByStudent.values
-        .where((a) => a >= chronicThreshold)
-        .length;
 
     final byClass = <String, List<Student>>{};
     for (final s in students) {
       byClass.putIfAbsent(s.className, () => []).add(s);
     }
-    final perClass =
-        byClass.entries.map((entry) {
-          final classStudents = entry.value;
-          final classPresent = classStudents.fold<int>(
-            0,
-            (sum, s) => sum + (presentDatesByStudent[s.studentId]?.length ?? 0),
-          );
-          final classPossible = classStudents.length * totalDays;
-          final rate = classPossible == 0 ? 0.0 : classPresent / classPossible;
-          return ClassAttendanceRow(
-            className: entry.key,
-            studentCount: classStudents.length,
-            presentCount: classPresent,
-            absentCount: classPossible - classPresent,
-            attendanceRate: rate,
-          );
-        }).toList()
-          ..sort((a, b) => b.attendanceRate.compareTo(a.attendanceRate));
+    final perClass = byClass.entries.map((entry) {
+      final classStudents = entry.value;
+      final classPresent = classStudents.fold<int>(
+        0,
+        (sum, s) => sum + (presentDatesByStudent[s.studentId]?.length ?? 0),
+      );
+      final classPossible = classStudents.length * totalDays;
+      final rate = classPossible == 0 ? 0.0 : classPresent / classPossible;
+      return ClassAttendanceRow(
+        className: entry.key,
+        studentCount: classStudents.length,
+        presentCount: classPresent,
+        absentCount: classPossible - classPresent,
+        attendanceRate: rate,
+      );
+    }).toList()..sort((a, b) => b.attendanceRate.compareTo(a.attendanceRate));
 
     final dailyRates = dateKeys.map((key) {
       final presentCount = presentDatesByStudent.values
           .where((dates) => dates.contains(key))
           .length;
-      return DailyRatePoint(date: DateKey.parse(key), presentCount: presentCount);
+      return DailyRatePoint(
+        date: DateKey.parse(key),
+        presentCount: presentCount,
+      );
     }).toList();
 
     return AttendanceReportStats(
-      perfectAttendanceCount: perfectAttendanceCount,
-      chronicAbsenceCount: chronicAbsenceCount,
-      chronicAbsenceThresholdDays: chronicThreshold,
       totalDays: totalDays,
       perClass: perClass,
       dailyRates: dailyRates,
@@ -149,11 +117,7 @@ class AttendanceReportStats {
     final start = DateTime(from.year, from.month, from.day);
     final end = DateTime(to.year, to.month, to.day);
     final keys = <String>[];
-    for (
-      var d = start;
-      !d.isAfter(end);
-      d = d.add(const Duration(days: 1))
-    ) {
+    for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
       keys.add(DateKey.of(d));
     }
     return keys;

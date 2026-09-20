@@ -15,6 +15,7 @@ import '../../../students/domain/usecases/student_usecases.dart';
 import '../../../user_management/domain/usecases/user_admin_usecases.dart';
 import '../../../workers/domain/entities/worker.dart';
 import '../../../workers/domain/usecases/worker_usecases.dart';
+import '../../domain/attendance_breakdown.dart';
 import '../../domain/attendance_report_stats.dart';
 import '../../domain/dashboard_stats.dart';
 
@@ -92,15 +93,32 @@ class DashboardCubit extends Cubit<DashboardState> {
 
   void setDate(DateTime date) {
     if (DateKey.of(date) == DateKey.of(state.date)) return;
-    emit(state.copyWith(date: date));
+    // A different day is a different list: start again from the first page.
+    emit(
+      state.copyWith(
+        date: date,
+        activityLimit: DashboardState.activityFirstPage,
+      ),
+    );
     _subscribeAttendance();
   }
 
-  void setTypeFilter(PersonType? type) =>
-      emit(state.copyWith(typeFilter: type, clearTypeFilter: type == null));
+  void setTypeFilter(PersonType? type) => emit(
+    state.copyWith(
+      typeFilter: type,
+      clearTypeFilter: type == null,
+      activityLimit: DashboardState.activityFirstPage,
+    ),
+  );
 
-  /// Loads the report section (rate-over-time / class comparison / detailed
-  /// table) for a new date range. Uses a one-shot [AttendanceRepository.getInRange]
+  /// "View more" on the recent-activity list: reveal another page of rows.
+  void showMoreActivity() => emit(
+    state.copyWith(
+      activityLimit: state.activityLimit + DashboardState.activityPageSize,
+    ),
+  );
+
+  /// Loads the report section (rate-over-time / class comparison) for a new date range. Uses a one-shot [AttendanceRepository.getInRange]
   /// fetch — historical reporting doesn't need a live subscription.
   Future<void> setReportRange(DateTime from, DateTime to) async {
     emit(state.copyWith(reportFrom: from, reportTo: to));

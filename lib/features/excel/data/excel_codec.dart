@@ -14,7 +14,12 @@ import '../domain/repositories/excel_repository.dart';
 class ExcelCodec {
   static final _time = DateFormat('HH:mm');
 
-  static const _staticHeaders = ['Name', 'Person ID', 'Person Type', 'Recorded by'];
+  static const _staticHeaders = [
+    'Name',
+    'Person ID',
+    'Person Type',
+    'Recorded by',
+  ];
 
   static final _headerStyle = CellStyle(
     bold: true,
@@ -46,7 +51,11 @@ class ExcelCodec {
 
     for (var c = 0; c < _staticHeaders.length; c++) {
       final top = CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0);
-      sheet.updateCell(top, TextCellValue(_staticHeaders[c]), cellStyle: _headerStyle);
+      sheet.updateCell(
+        top,
+        TextCellValue(_staticHeaders[c]),
+        cellStyle: _headerStyle,
+      );
       sheet.merge(top, CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 1));
     }
 
@@ -54,7 +63,10 @@ class ExcelCodec {
       final col = _staticHeaders.length + i * 2;
       final top = CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0);
       sheet.updateCell(top, TextCellValue(dates[i]), cellStyle: _headerStyle);
-      sheet.merge(top, CellIndex.indexByColumnRow(columnIndex: col + 1, rowIndex: 0));
+      sheet.merge(
+        top,
+        CellIndex.indexByColumnRow(columnIndex: col + 1, rowIndex: 0),
+      );
       sheet.updateCell(
         CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 1),
         TextCellValue('Check-in'),
@@ -102,13 +114,17 @@ class ExcelCodec {
         sheet.updateCell(
           CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rowIndex),
           TextCellValue(
-            record?.checkIn == null ? '' : _time.format(record!.checkIn!.toLocal()),
+            record?.checkIn == null
+                ? ''
+                : _time.format(record!.checkIn!.toLocal()),
           ),
         );
         sheet.updateCell(
           CellIndex.indexByColumnRow(columnIndex: col + 1, rowIndex: rowIndex),
           TextCellValue(
-            record?.checkOut == null ? '' : _time.format(record!.checkOut!.toLocal()),
+            record?.checkOut == null
+                ? ''
+                : _time.format(record!.checkOut!.toLocal()),
           ),
         );
       }

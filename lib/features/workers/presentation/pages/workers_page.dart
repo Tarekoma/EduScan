@@ -19,26 +19,28 @@ import '../cubit/workers_cubit.dart';
 import 'worker_attendance_details_page.dart';
 import 'worker_form_page.dart';
 
-/// Workers list. [readOnly] hides all mutation actions (security/supervisor
-/// views still get the QR action).
+/// Workers list. [readOnly] hides all mutation actions (security view still
+/// gets the QR action); [canDelete] hides only the delete action (supervisor).
 class WorkersPage extends StatelessWidget {
-  const WorkersPage({super.key, this.readOnly = false});
+  const WorkersPage({super.key, this.readOnly = false, this.canDelete = true});
 
   final bool readOnly;
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => sl<WorkersCubit>()..start(),
-      child: _WorkersView(readOnly: readOnly),
+      child: _WorkersView(readOnly: readOnly, canDelete: canDelete),
     );
   }
 }
 
 class _WorkersView extends StatelessWidget {
-  const _WorkersView({required this.readOnly});
+  const _WorkersView({required this.readOnly, required this.canDelete});
 
   final bool readOnly;
+  final bool canDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +50,9 @@ class _WorkersView extends StatelessWidget {
         toolbarHeight: 76,
         title: PageHeader(
           title: l10n.workersPageTitle,
-          subtitle: readOnly ? l10n.workersViewSubtitle : l10n.workersManageSubtitle,
+          subtitle: readOnly
+              ? l10n.workersViewSubtitle
+              : l10n.workersManageSubtitle,
         ),
         actions: [
           if (context.isMobile) ...[
@@ -74,24 +78,48 @@ class _WorkersView extends StatelessWidget {
             ..showSnackBar(SnackBar(content: Text(state.actionError!)));
         },
         builder: (context, state) {
-          return Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (state.all.isNotEmpty)
-                  Text(
-                    l10n.workersCount(state.filtered.length),
-                    style: Theme.of(context).textTheme.titleSmall,
+          // The count + search header scrolls away with the content and floats
+          // back in on the first scroll up; the list below stays lazy.
+          return NestedScrollView(
+            headerSliverBuilder: (context, _) => [
+              SliverFloatingHeader(
+                child: ColoredBox(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (state.all.isNotEmpty)
+                          Text(
+                            l10n.workersCount(state.filtered.length),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        const SizedBox(height: AppSpacing.sm),
+                        AppSearchBar(
+                          hintText: l10n.searchWorkersHint,
+                          onChanged: context.read<WorkersCubit>().search,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                    ),
                   ),
-                const SizedBox(height: AppSpacing.sm),
-                AppSearchBar(
-                  hintText: l10n.searchWorkersHint,
-                  onChanged: context.read<WorkersCubit>().search,
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Expanded(child: _buildList(context, state)),
-              ],
+              ),
+            ],
+            body: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: _buildList(context, state),
             ),
           );
         },
@@ -121,15 +149,22 @@ class _WorkersView extends StatelessWidget {
         return context.isMobile
             ? ListView.separated(
                 itemCount: workers.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, i) => _WorkerCard(
                   worker: workers[i],
                   readOnly: readOnly,
                   onTap: () => _openDetails(context, workers[i]),
                   onShowQr: () => _showQr(context, workers[i]),
-                  onEdit: () => _openForm(context, existingId: workers[i].workerId),
-                  onDelete: () =>
-                      _confirmDelete(context, workers[i].workerId, workers[i].fullName),
+                  onEdit: () =>
+                      _openForm(context, existingId: workers[i].workerId),
+                  onDelete: !canDelete
+                      ? null
+                      : () => _confirmDelete(
+                          context,
+                          workers[i].workerId,
+                          workers[i].fullName,
+                        ),
                 ),
               )
             : _WorkersTable(
@@ -138,7 +173,9 @@ class _WorkersView extends StatelessWidget {
                 onTap: (w) => _openDetails(context, w),
                 onShowQr: (w) => _showQr(context, w),
                 onEdit: (w) => _openForm(context, existingId: w.workerId),
-                onDelete: (w) => _confirmDelete(context, w.workerId, w.fullName),
+                onDelete: !canDelete
+                    ? null
+                    : (w) => _confirmDelete(context, w.workerId, w.fullName),
               );
     }
   }
@@ -153,15 +190,16 @@ class _WorkersView extends StatelessWidget {
         ),
       );
 
-  void _showQr(BuildContext context, Worker worker) => Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => PersonQrPage(
-        value: worker.qrCodeId,
-        title: worker.fullName,
-        subtitle: _subtitle(context, worker),
-      ),
-    ),
-  );
+  void _showQr(BuildContext context, Worker worker) =>
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PersonQrPage(
+            value: worker.qrCodeId,
+            title: worker.fullName,
+            subtitle: _subtitle(context, worker),
+          ),
+        ),
+      );
 
   Future<void> _openForm(BuildContext context, {String? existingId}) {
     final cubit = context.read<WorkersCubit>();
@@ -207,7 +245,7 @@ class _WorkerActions extends StatelessWidget {
   final bool readOnly;
   final VoidCallback onShowQr;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -222,10 +260,11 @@ class _WorkerActions extends StatelessWidget {
         ),
         if (!readOnly)
           PopupMenuButton<String>(
-            onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
+            onSelected: (v) => v == 'edit' ? onEdit() : onDelete?.call(),
             itemBuilder: (_) => [
               PopupMenuItem(value: 'edit', child: Text(l10n.commonEdit)),
-              PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
+              if (onDelete != null)
+                PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
             ],
           ),
       ],
@@ -248,7 +287,7 @@ class _WorkerCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback onShowQr;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +324,7 @@ class _WorkersTable extends StatelessWidget {
   final ValueChanged<Worker> onTap;
   final ValueChanged<Worker> onShowQr;
   final ValueChanged<Worker> onEdit;
-  final ValueChanged<Worker> onDelete;
+  final ValueChanged<Worker>? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -306,9 +345,18 @@ class _WorkersTable extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Expanded(flex: 3, child: Text(l10n.tableHeaderStaff, style: headerStyle)),
-                Expanded(flex: 2, child: Text(l10n.tableHeaderWorkerId, style: headerStyle)),
-                Expanded(flex: 2, child: Text(l10n.tableHeaderJobTitle, style: headerStyle)),
+                Expanded(
+                  flex: 3,
+                  child: Text(l10n.tableHeaderStaff, style: headerStyle),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(l10n.tableHeaderWorkerId, style: headerStyle),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(l10n.tableHeaderJobTitle, style: headerStyle),
+                ),
                 const SizedBox(width: 96),
               ],
             ),
@@ -339,13 +387,19 @@ class _WorkersTable extends StatelessWidget {
                               ),
                               const SizedBox(width: AppSpacing.sm),
                               Expanded(
-                                child: Text(w.fullName, overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  w.fullName,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         Expanded(flex: 2, child: Text(w.workerId)),
-                        Expanded(flex: 2, child: Text(w.jobTitle.label(context))),
+                        Expanded(
+                          flex: 2,
+                          child: Text(w.jobTitle.label(context)),
+                        ),
                         SizedBox(
                           width: 96,
                           child: Align(
@@ -355,7 +409,9 @@ class _WorkersTable extends StatelessWidget {
                               readOnly: readOnly,
                               onShowQr: () => onShowQr(w),
                               onEdit: () => onEdit(w),
-                              onDelete: () => onDelete(w),
+                              onDelete: onDelete == null
+                                  ? null
+                                  : () => onDelete!(w),
                             ),
                           ),
                         ),

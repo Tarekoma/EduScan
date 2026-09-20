@@ -10,6 +10,7 @@ abstract final class AppRoutes {
   static const String securityStudents = '/security/students';
   static const String securityWorkers = '/security/workers';
   static const String securityDashboard = '/security/dashboard';
+  static const String securityExcel = '/security/excel';
   static const String managerHome = '/manager';
   static const String supervisorHome = '/supervisor';
   static const String parentHome = '/parent';
@@ -25,7 +26,9 @@ abstract final class AppRoutes {
   static const String managerUsers = '/manager/users';
   static const String managerExcel = '/manager/excel';
 
-  // People (supervisor, read-only).
+  // People (supervisor: add and edit, never delete).
   static const String supervisorStudents = '/supervisor/students';
   static const String supervisorWorkers = '/supervisor/workers';
+  static const String supervisorUsers = '/supervisor/users';
+  static const String supervisorExcel = '/supervisor/excel';
 }

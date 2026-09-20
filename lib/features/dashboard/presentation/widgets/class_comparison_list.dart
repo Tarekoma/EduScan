@@ -6,7 +6,8 @@ import '../../../../core/widgets/page_header.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/attendance_report_stats.dart';
 
-/// Horizontal-bar comparison of attendance rate per class, sorted best first.
+/// Horizontal-bar comparison of attendance rate per class, sorted best first,
+/// with each class's student count and absences shown beside its name.
 class ClassComparisonList extends StatelessWidget {
   const ClassComparisonList({super.key, required this.rows});
 
@@ -20,10 +21,14 @@ class ClassComparisonList extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeader(title: AppLocalizations.of(context)!.dashboardClassWiseComparison),
+            SectionHeader(
+              title: AppLocalizations.of(context)!.dashboardClassWiseComparison,
+            ),
             const SizedBox(height: AppSpacing.md),
             if (rows.isEmpty)
-              EmptyView(message: AppLocalizations.of(context)!.dashboardNoClassesYet)
+              EmptyView(
+                message: AppLocalizations.of(context)!.dashboardNoClassesYet,
+              )
             else
               ...rows.map((r) => _ClassBar(row: r)),
           ],
@@ -57,9 +62,19 @@ class _ClassBar extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(
-                '${row.presentCount}/${row.presentCount + row.absentCount}',
-                style: Theme.of(context).textTheme.labelLarge,
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  AppLocalizations.of(context)!.dashboardStudentsAbsenceCount(
+                    row.studentCount,
+                    row.absentCount,
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -69,7 +84,9 @@ class _ClassBar extends StatelessWidget {
             child: LinearProgressIndicator(
               value: row.attendanceRate.clamp(0, 1),
               minHeight: 8,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),

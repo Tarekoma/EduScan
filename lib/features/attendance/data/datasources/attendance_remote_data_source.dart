@@ -171,7 +171,9 @@ class AttendanceRemoteDataSource {
       await _firestore.runTransaction((tx) async {
         final snap = await tx.get(ref);
         if (!snap.exists) {
-          throw NotFoundException(appStrings.attendanceRecordNotFound(recordId));
+          throw NotFoundException(
+            appStrings.attendanceRecordNotFound(recordId),
+          );
         }
         final current = AttendanceRecordModel.fromDoc(snap);
         final now = DateTime.now();

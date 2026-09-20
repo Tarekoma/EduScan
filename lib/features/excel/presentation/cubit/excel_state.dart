@@ -2,7 +2,7 @@ part of 'excel_cubit.dart';
 
 class ExcelState extends Equatable {
   const ExcelState({
-    this.exporting = false,
+    this.exportingType,
     this.importing = false,
     this.studentPreview,
     this.workerPreview,
@@ -11,7 +11,8 @@ class ExcelState extends Equatable {
     this.error,
   });
 
-  final bool exporting;
+  /// Which export (students or workers) is currently running, if any.
+  final PersonType? exportingType;
   final bool importing;
   final ParsedSheet<StudentImportRow>? studentPreview;
   final ParsedSheet<WorkerImportRow>? workerPreview;
@@ -19,10 +20,12 @@ class ExcelState extends Equatable {
   final String? info;
   final String? error;
 
+  bool get exporting => exportingType != null;
   bool get busy => exporting || importing;
 
   ExcelState copyWith({
-    bool? exporting,
+    PersonType? exportingType,
+    bool clearExporting = false,
     bool? importing,
     ParsedSheet<StudentImportRow>? studentPreview,
     ParsedSheet<WorkerImportRow>? workerPreview,
@@ -33,7 +36,9 @@ class ExcelState extends Equatable {
     bool clearMessages = false,
   }) {
     return ExcelState(
-      exporting: exporting ?? this.exporting,
+      exportingType: clearExporting
+          ? null
+          : (exportingType ?? this.exportingType),
       importing: importing ?? this.importing,
       studentPreview: clearPreview
           ? null
@@ -51,7 +56,7 @@ class ExcelState extends Equatable {
 
   @override
   List<Object?> get props => [
-    exporting,
+    exportingType,
     importing,
     studentPreview?.rows.length,
     studentPreview?.skipped.length,

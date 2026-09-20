@@ -42,11 +42,11 @@ client-side on the next auth-state emission.
 | Collection | security | manager | supervisor | parent |
 |------------|----------|---------|------------|--------|
 | `users/{uid}` | read others | read others | read others | read **self only** |
-| `users` writes | — | ✅ create (role/isActive validated), update (identity locked), delete | — | — |
+| `users` writes | — | ✅ create (role/isActive validated), update (identity locked), delete | create **security/parent only**, update security/parent accounts (identity locked), **no delete** | — |
 | `students` read | ✅ | ✅ | ✅ | **linked children only** |
-| `students` write | — | ✅ (id/qr/names validated) | — | — |
+| `students` write | — | ✅ create/update/delete (id/qr/names validated) | ✅ create/update, **no delete** | — |
 | `workers` read | ✅ | ✅ | ✅ | — |
-| `workers` write | — | ✅ | — | — |
+| `workers` write | — | ✅ create/update/delete | ✅ create/update, **no delete** | — |
 | `attendance` read | ✅ | ✅ | ✅ | **own child's records only** |
 | `attendance` create/update | ✅ (identity + check-in audit locked) | ✅ historical Excel import only | — | — |
 | `attendance` delete | — | — | — | — |
@@ -61,7 +61,7 @@ client-side on the next auth-state emission.
 
 The link is `users/{parentUid}.studentIds: [...]`. Rules validate it with
 `parentOwnsStudent(studentId)` — a `studentId` sent by the client is **never**
-trusted on its own. Only a manager can change the link (`users` update rule);
+trusted on its own. Only a manager or supervisor can change the link (`users` update rule);
 the client also checks each student exists before writing.
 
 ## Business rules not expressible in Security Rules

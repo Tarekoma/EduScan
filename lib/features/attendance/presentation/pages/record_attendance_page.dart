@@ -260,6 +260,8 @@ class _ResultCard extends StatelessWidget {
         );
       case RecordStatus.success:
         final r = state.record!;
+        final person = state.person;
+        final recordedBy = state.recordedByName;
         final isIn = state.action == AttendanceAction.checkIn;
         return Card(
           color: scheme.secondaryContainer,
@@ -282,10 +284,23 @@ class _ResultCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text(l10n.personIdTypeLabel(r.personId, r.personType.label(context))),
+                if (person != null)
+                  Text(
+                    person.displayName,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                Text(
+                  l10n.personIdTypeLabel(
+                    r.personId,
+                    r.personType.label(context),
+                  ),
+                ),
+                if (person?.subtitle != null) Text(person!.subtitle!),
                 Text(l10n.attendanceCheckInAt(TimeFormat.time(r.checkIn))),
                 Text(l10n.attendanceCheckOutAt(TimeFormat.time(r.checkOut))),
                 Text(l10n.attendanceStatusLabel(r.state.label(context))),
+                if (recordedBy != null)
+                  Text(l10n.attendanceRecordedBy(recordedBy)),
               ],
             ),
           ),
