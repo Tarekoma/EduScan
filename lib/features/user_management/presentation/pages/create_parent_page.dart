@@ -48,7 +48,11 @@ class _CreateParentPageState extends State<CreateParentPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_studentIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.linkAtLeastOneChildSnackbar)),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.linkAtLeastOneChildSnackbar,
+          ),
+        ),
       );
       return;
     }
@@ -66,7 +70,12 @@ class _CreateParentPageState extends State<CreateParentPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.newParentAccountTitle)),
+      appBar: AppBar(
+        title: Text(
+          l10n.newParentAccountTitle,
+          style: const TextStyle(fontSize: 17),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(

@@ -11,11 +11,9 @@ import '../../../../core/enums/person_type_display.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/person_id.dart';
 import '../../../../core/utils/time_format.dart';
-import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/primary_button.dart';
-import '../../../../core/widgets/sign_out_button.dart';
-import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../core/widgets/account_button.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../pickup/presentation/cubit/pickup_alert_cubit.dart';
@@ -108,16 +106,12 @@ class _RecordAttendanceViewState extends State<_RecordAttendanceView> {
                 icon: Badge(
                   isLabelVisible: alert.pendingCount > 0,
                   label: Text('${alert.pendingCount}'),
-                  child: const Icon(Icons.directions_car_outlined),
+                  child: const Icon(Icons.directions_car_outlined, size: 28),
                 ),
                 onPressed: () => context.push(AppRoutes.securityPickup),
               ),
             ),
-          if (context.isMobile) ...[
-            const ThemeToggleButton(),
-            const LocaleToggleButton(),
-            const SignOutButton(),
-          ],
+          if (context.isMobile) ...[const AccountButton()],
         ],
       ),
       body: SingleChildScrollView(

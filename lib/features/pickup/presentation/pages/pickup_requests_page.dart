@@ -41,7 +41,12 @@ class _PickupRequestsViewState extends State<_PickupRequestsView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.pickupRequestsTitle)),
+      appBar: AppBar(
+        title: Text(
+          l10n.pickupRequestsTitle,
+          style: const TextStyle(fontSize: 20),
+        ),
+      ),
       body: BlocConsumer<SecurityPickupCubit, SecurityPickupState>(
         listenWhen: (a, b) =>
             a.actionError != b.actionError && b.actionError != null,
@@ -82,7 +87,10 @@ class _PickupRequestsViewState extends State<_PickupRequestsView> {
                       final ok = await showConfirmDialog(
                         context,
                         title: l10n.pickupCompleteDialogTitle,
-                        message: l10n.pickupCompleteDialogMessage(r.studentName, r.parentName),
+                        message: l10n.pickupCompleteDialogMessage(
+                          r.studentName,
+                          r.parentName,
+                        ),
                         confirmLabel: l10n.pickupCompleteButton,
                       );
                       if (ok) cubit.complete(r.requestId);

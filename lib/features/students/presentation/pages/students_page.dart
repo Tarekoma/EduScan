@@ -8,10 +8,8 @@ import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/app_search_bar.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
-import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
-import '../../../../core/widgets/sign_out_button.dart';
-import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../core/widgets/account_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../qr/presentation/pages/person_qr_page.dart';
 import '../../domain/entities/student.dart';
@@ -56,9 +54,7 @@ class _StudentsView extends StatelessWidget {
         ),
         actions: [
           if (context.isMobile) ...[
-            const ThemeToggleButton(),
-            const LocaleToggleButton(),
-            const SignOutButton(),
+            const AccountButton(),
           ],
         ],
       ),

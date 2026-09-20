@@ -27,11 +27,7 @@ class SplashPage extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset(
-                      AppConfig.logoAsset,
-                      width: 128,
-                      height: 128,
-                    ),
+                    Image.asset(AppConfig.logoAsset, width: 128, height: 128),
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       AppConfig.appName,

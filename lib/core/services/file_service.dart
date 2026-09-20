@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -13,6 +14,10 @@ abstract interface class FileService {
 
   /// Hands the user a generated file to save / send.
   Future<void> shareBytes(Uint8List bytes, String filename);
+
+  /// Lets the user choose where to save a generated PDF. Returns false if the
+  /// user cancelled.
+  Future<bool> savePdf(Uint8List bytes, String filename);
 }
 
 class PlatformFileService implements FileService {
@@ -34,5 +39,24 @@ class PlatformFileService implements FileService {
     final file = File('${dir.path}/$filename');
     await file.writeAsBytes(bytes, flush: true);
     await Share.shareXFiles([XFile(file.path)], subject: filename);
+  }
+
+  @override
+  Future<bool> savePdf(Uint8List bytes, String filename) async {
+    // Mobile/web plugins write [bytes] themselves; on desktop the picker only
+    // returns the chosen path, so the file must be written here.
+    final path = await FilePicker.platform.saveFile(
+      dialogTitle: filename,
+      fileName: filename,
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      bytes: bytes,
+    );
+    if (path == null) return false;
+    if (!kIsWeb &&
+        (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      await File(path).writeAsBytes(bytes, flush: true);
+    }
+    return true;
   }
 }

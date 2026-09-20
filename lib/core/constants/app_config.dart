@@ -1,13 +1,13 @@
 /// Application-wide configuration values. No business logic here — just tunables
 /// that a maintainer may reasonably want to change in one place.
 abstract final class AppConfig {
-  static const String appName = 'EduScan';
+  static const String appName = 'Madrasty';
 
   /// Branding tagline shown under the logo on the splash/login screens.
-  static const String tagline = 'Scan Today. Brighter Tomorrow.';
+  static const String tagline = 'Smarter Attendance. Better Management.';
 
   /// Shared path to the app logo (registered under `flutter.assets`).
-  static const String logoAsset = 'assets/images/EduScan_app_logo.png';
+  static const String logoAsset = 'assets/images/madrasty_logo2.jpeg';
 
   /// Responsive breakpoints (logical pixels).
   static const double mobileBreakpoint = 600;

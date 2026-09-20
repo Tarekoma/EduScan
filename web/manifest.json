@@ -1,6 +1,6 @@
 {
-    "name": "Attendance_Management",
-    "short_name": "Attendance_Management",
+    "name": "Madrasty",
+    "short_name": "Madrasty",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

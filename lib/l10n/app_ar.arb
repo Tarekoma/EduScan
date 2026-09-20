@@ -1,14 +1,14 @@
 {
   "@@locale": "ar",
 
-  "appTagline": "امسح اليوم. غدٌ أكثر إشراقًا.",
+  "appTagline": ".حضور أذكى. إدارة أفضل.",
 
   "navHome": "الرئيسية",
   "navStudents": "الطلاب",
   "navWorkers": "الموظفون",
   "navDashboard": "لوحة التحكم",
   "navUsers": "المستخدمون",
-  "navExcel": "إكسل",
+  "navExcel": "البيانات",
 
   "themeSwitchToLight": "التبديل إلى الوضع الفاتح",
   "themeSwitchToDark": "التبديل إلى الوضع الداكن",
@@ -155,7 +155,7 @@
   "dashboardPresentCount": "{count} حاضر",
   "notEnoughDataForRange": "لا توجد بيانات كافية لهذه الفترة.",
 
-  "excelTitle": "إكسل",
+  "excelTitle": "البيانات",
   "excelSubtitle": "استيراد وتصدير بيانات الحضور",
   "exportTabLabel": "تصدير",
   "importTabLabel": "استيراد",
@@ -310,5 +310,29 @@
   "accountStatusLabel": "حالة الحساب",
   "accountStatusActive": "مفعّل",
   "accountStatusInactive": "معطّل",
-  "parentDetailsSubtitle": "بيانات حساب ولي الأمر"
+  "parentDetailsSubtitle": "بيانات حساب ولي الأمر",
+  "printQrTabLabel": "طباعة QR",
+  "printQrPickHint": "اختر الطالب أو العامل الذي تريد طباعة بطاقة QR الخاصة به. اضغط على الاسم لفتحه، أو حدّد عدة أشخاص أولًا.",
+  "printQrSelectAll": "تحديد الكل",
+  "printQrClearSelection": "إلغاء التحديد",
+  "printQrPrintSelected": "طباعة المحدد ({count})",
+  "@printQrPrintSelected": {"placeholders": {"count": {"type": "int"}}},
+  "printQrAddSelected": "إضافة ({count})",
+  "@printQrAddSelected": {"placeholders": {"count": {"type": "int"}}},
+  "printQrAddTooltip": "إضافة أشخاص آخرين",
+  "printQrAddTitle": "إضافة أشخاص إلى الورقة",
+  "printQrAlreadyAdded": "موجود بالفعل في الورقة",
+  "printQrPreviewTitle": "بطاقات QR",
+  "printQrCardsCount": "{count, plural, one{بطاقة واحدة} other{{count} بطاقات}} في الورقة",
+  "@printQrCardsCount": {"placeholders": {"count": {"type": "int"}}},
+  "printQrDownloadTooltip": "حفظ PDF",
+  "printQrShareTooltip": "مشاركة PDF",
+  "printQrFailed": "تعذر إنشاء ملف PDF. حاول مرة أخرى.",
+  "printQrSaved": "تم حفظ ملف PDF.",
+  "printQrSizeHint": "مقاس البطاقة 54 × 86 مم — اطبع بحجم 100% (الحجم الفعلي) وقص على طول الإطار.",
+  "cardTypeStudent": "طالب",
+  "cardTypeWorker": "موظف",
+  "printQrPreparing": "جارٍ تجهيز {count, plural, one{بطاقة واحدة} other{{count} بطاقات}}…",
+  "@printQrPreparing": {"placeholders": {"count": {"type": "int"}}},
+  "accountMenuTooltip": "الحساب"
 }

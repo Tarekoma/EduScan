@@ -8,11 +8,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/class_initials.dart';
 import '../../../../core/utils/time_format.dart';
 import '../../../../core/widgets/app_state_views.dart';
-import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
-import '../../../../core/widgets/sign_out_button.dart';
 import '../../../../core/widgets/status_badge.dart';
-import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../core/widgets/account_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../attendance/domain/entities/attendance_record.dart';
 import '../../../attendance/presentation/attendance_status_display.dart';
@@ -41,11 +39,7 @@ class _ParentDashboardView extends StatelessWidget {
       appBar: AppBar(
         toolbarHeight: 76,
         title: PageHeader(title: l10n.parentMyChildrenTitle),
-        actions: const [
-          ThemeToggleButton(),
-          LocaleToggleButton(),
-          SignOutButton(),
-        ],
+        actions: const [AccountButton()],
       ),
       body: SafeArea(
         child: BlocBuilder<ParentDashboardCubit, ParentDashboardState>(

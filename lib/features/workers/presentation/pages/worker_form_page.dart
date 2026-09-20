@@ -68,7 +68,12 @@ class _WorkerFormPageState extends State<WorkerFormPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? l10n.editWorkerTitle : l10n.addWorkerButton)),
+      appBar: AppBar(
+        title: Text(
+          _isEdit ? l10n.editWorkerTitle : l10n.addWorkerButton,
+          style: const TextStyle(fontSize: 17),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
@@ -80,7 +85,9 @@ class _WorkerFormPageState extends State<WorkerFormPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Text(
-                    l10n.idLabel(_existing?.workerId ?? widget.existingId ?? ''),
+                    l10n.idLabel(
+                      _existing?.workerId ?? widget.existingId ?? '',
+                    ),
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ),
@@ -99,7 +106,10 @@ class _WorkerFormPageState extends State<WorkerFormPage> {
                 decoration: InputDecoration(labelText: l10n.fieldJobTitle),
                 items: [
                   for (final title in WorkerJobTitle.values)
-                    DropdownMenuItem(value: title, child: Text(title.label(context))),
+                    DropdownMenuItem(
+                      value: title,
+                      child: Text(title.label(context)),
+                    ),
                 ],
                 onChanged: (v) => setState(() => _jobTitle = v ?? _jobTitle),
               ),
@@ -107,7 +117,9 @@ class _WorkerFormPageState extends State<WorkerFormPage> {
               BlocBuilder<WorkersCubit, WorkersState>(
                 buildWhen: (a, b) => a.isMutating != b.isMutating,
                 builder: (context, state) => PrimaryButton(
-                  label: _isEdit ? l10n.saveChangesButton : l10n.createWorkerButton,
+                  label: _isEdit
+                      ? l10n.saveChangesButton
+                      : l10n.createWorkerButton,
                   isLoading: state.isMutating,
                   onPressed: _submit,
                 ),

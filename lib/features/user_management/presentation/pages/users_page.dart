@@ -7,10 +7,8 @@ import '../../../../core/enums/user_role_display.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/app_state_views.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
-import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
-import '../../../../core/widgets/sign_out_button.dart';
-import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../core/widgets/account_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../cubit/user_management_cubit.dart';
@@ -46,9 +44,7 @@ class UsersPage extends StatelessWidget {
           ),
           actions: [
             if (context.isMobile) ...[
-              const ThemeToggleButton(),
-              const LocaleToggleButton(),
-              const SignOutButton(),
+              const AccountButton(),
             ],
           ],
           bottom: TabBar(
@@ -122,17 +118,18 @@ class _RoleTabView extends StatelessWidget {
               );
             case UsersStatus.ready:
               if (state.users.isEmpty) {
-                return EmptyView(message: l10n.noRoleAccountsYet(role.label(context)));
+                return EmptyView(
+                  message: l10n.noRoleAccountsYet(role.label(context)),
+                );
               }
               return ListView.separated(
                 itemCount: state.users.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, i) =>
-                    _UserTile(
-                      user: state.users[i],
-                      role: role,
-                      canDelete: canDelete,
-                    ),
+                itemBuilder: (context, i) => _UserTile(
+                  user: state.users[i],
+                  role: role,
+                  canDelete: canDelete,
+                ),
               );
           }
         },
@@ -202,37 +199,40 @@ class _UserTile extends StatelessWidget {
           ),
           // Nothing to offer: only "delete" would remain for a non-parent.
           if (role == UserRole.parent || canDelete)
-          PopupMenuButton<String>(
-            onSelected: (v) async {
-              if (v == 'links') {
-                final picked = await Navigator.of(context).push<List<String>>(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        StudentMultiSelectPage(initial: user.studentIds),
+            PopupMenuButton<String>(
+              onSelected: (v) async {
+                if (v == 'links') {
+                  final picked = await Navigator.of(context).push<List<String>>(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          StudentMultiSelectPage(initial: user.studentIds),
+                    ),
+                  );
+                  if (picked != null) cubit.updateLinks(user.uid, picked);
+                } else if (v == 'delete') {
+                  final ok = await showConfirmDialog(
+                    context,
+                    title: l10n.deleteAccountDialogTitle,
+                    message: l10n.deleteAccountMessage(user.name),
+                    confirmLabel: l10n.commonDelete,
+                    destructive: true,
+                  );
+                  if (ok) cubit.deleteUser(user.uid, role);
+                }
+              },
+              itemBuilder: (_) => [
+                if (role == UserRole.parent)
+                  PopupMenuItem(
+                    value: 'links',
+                    child: Text(l10n.editLinkedChildrenMenuItem),
                   ),
-                );
-                if (picked != null) cubit.updateLinks(user.uid, picked);
-              } else if (v == 'delete') {
-                final ok = await showConfirmDialog(
-                  context,
-                  title: l10n.deleteAccountDialogTitle,
-                  message: l10n.deleteAccountMessage(user.name),
-                  confirmLabel: l10n.commonDelete,
-                  destructive: true,
-                );
-                if (ok) cubit.deleteUser(user.uid, role);
-              }
-            },
-            itemBuilder: (_) => [
-              if (role == UserRole.parent)
-                PopupMenuItem(
-                  value: 'links',
-                  child: Text(l10n.editLinkedChildrenMenuItem),
-                ),
-              if (canDelete)
-                PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
-            ],
-          ),
+                if (canDelete)
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text(l10n.commonDelete),
+                  ),
+              ],
+            ),
         ],
       ),
     );

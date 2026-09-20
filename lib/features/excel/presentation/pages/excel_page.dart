@@ -6,17 +6,19 @@ import '../../../../core/enums/person_type.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/time_format.dart';
-import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
 import '../../../../core/widgets/primary_button.dart';
-import '../../../../core/widgets/sign_out_button.dart';
-import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../core/widgets/account_button.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../qr/domain/entities/id_card_data.dart';
+import '../../../qr/presentation/pages/id_card_preview_page.dart';
+import '../../../qr/presentation/widgets/qr_person_picker.dart';
 import '../cubit/excel_cubit.dart';
 
-/// Export attendance to Excel and import the institution's existing student
-/// roster / attendance history (manager and supervisor). With [exportOnly]
-/// (security) the import tab is not shown at all.
+/// The "Data" page: export attendance to Excel, import the institution's
+/// existing student roster / attendance history (manager and supervisor), and
+/// print QR cards. With [exportOnly] (security) the import tab is not shown at
+/// all.
 class ExcelPage extends StatelessWidget {
   const ExcelPage({super.key, this.exportOnly = false});
 
@@ -50,7 +52,7 @@ class _ExcelViewState extends State<_ExcelView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return DefaultTabController(
-      length: widget.exportOnly ? 1 : 2,
+      length: widget.exportOnly ? 2 : 3,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 76,
@@ -60,15 +62,14 @@ class _ExcelViewState extends State<_ExcelView> {
           ),
           actions: [
             if (context.isMobile) ...[
-              const ThemeToggleButton(),
-              const LocaleToggleButton(),
-              const SignOutButton(),
+              const AccountButton(),
             ],
           ],
           bottom: TabBar(
             tabs: [
               Tab(text: l10n.exportTabLabel),
               if (!widget.exportOnly) Tab(text: l10n.importTabLabel),
+              Tab(text: l10n.printQrTabLabel),
             ],
           ),
         ),
@@ -85,6 +86,7 @@ class _ExcelViewState extends State<_ExcelView> {
             children: [
               _exportTab(context, state),
               if (!widget.exportOnly) _importTab(context, state),
+              const _PrintQrTab(),
             ],
           ),
         ),
@@ -282,6 +284,39 @@ class _ImportSection extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Pick students / workers and open the printable QR sheet. Kept alive so the
+/// selection survives switching between the Data tabs.
+class _PrintQrTab extends StatefulWidget {
+  const _PrintQrTab();
+
+  @override
+  State<_PrintQrTab> createState() => _PrintQrTabState();
+}
+
+class _PrintQrTabState extends State<_PrintQrTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  void _openSheet(List<IdCardData> cards) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => IdCardPreviewPage(cards: cards)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final l10n = AppLocalizations.of(context)!;
+    return QrPersonPicker(
+      hint: l10n.printQrPickHint,
+      onOpen: (card) => _openSheet([card]),
+      onConfirm: _openSheet,
+      confirmLabel: (l10n, count) => l10n.printQrPrintSelected(count),
     );
   }
 }

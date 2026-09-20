@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
 
-  "appTagline": "Scan Today. Brighter Tomorrow.",
+  "appTagline": "Smarter Attendance. Better Management.",
   "@appTagline": {"description": "Tagline shown under the app name on the splash screen"},
 
   "navHome": "Home",
@@ -9,7 +9,7 @@
   "navWorkers": "Workers",
   "navDashboard": "Dashboard",
   "navUsers": "Users",
-  "navExcel": "Excel",
+  "navExcel": "Data",
 
   "themeSwitchToLight": "Switch to light mode",
   "themeSwitchToDark": "Switch to dark mode",
@@ -174,7 +174,7 @@
   "@dashboardPresentCount": {"placeholders": {"count": {"type": "int"}}},
   "notEnoughDataForRange": "Not enough data for this range.",
 
-  "excelTitle": "Excel",
+  "excelTitle": "Data",
   "excelSubtitle": "Import and export attendance data",
   "exportTabLabel": "Export",
   "importTabLabel": "Import",
@@ -359,5 +359,29 @@
   "accountStatusLabel": "Account status",
   "accountStatusActive": "Active",
   "accountStatusInactive": "Deactivated",
-  "parentDetailsSubtitle": "Parent account details"
+  "parentDetailsSubtitle": "Parent account details",
+  "printQrTabLabel": "Print QR code",
+  "printQrPickHint": "Choose the student or worker whose QR card you want to print. Tap a name to open it, or tick several first.",
+  "printQrSelectAll": "Select all",
+  "printQrClearSelection": "Clear selection",
+  "printQrPrintSelected": "Print selected ({count})",
+  "@printQrPrintSelected": {"placeholders": {"count": {"type": "int"}}},
+  "printQrAddSelected": "Add ({count})",
+  "@printQrAddSelected": {"placeholders": {"count": {"type": "int"}}},
+  "printQrAddTooltip": "Add more people",
+  "printQrAddTitle": "Add people to the sheet",
+  "printQrAlreadyAdded": "Already on the sheet",
+  "printQrPreviewTitle": "QR cards",
+  "printQrCardsCount": "{count, plural, one{1 card} other{{count} cards}} on the sheet",
+  "@printQrCardsCount": {"placeholders": {"count": {"type": "int"}}},
+  "printQrDownloadTooltip": "Save PDF",
+  "printQrShareTooltip": "Share PDF",
+  "printQrFailed": "Could not generate the PDF. Please try again.",
+  "printQrSaved": "PDF saved.",
+  "printQrSizeHint": "Cards are 54 × 86 mm — print at 100% (actual size) and cut along the outlines.",
+  "cardTypeStudent": "STUDENT",
+  "cardTypeWorker": "STAFF",
+  "printQrPreparing": "Preparing {count, plural, one{1 card} other{{count} cards}}…",
+  "@printQrPreparing": {"placeholders": {"count": {"type": "int"}}},
+  "accountMenuTooltip": "Account"
 }

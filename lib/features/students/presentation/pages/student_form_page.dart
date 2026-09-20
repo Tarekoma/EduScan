@@ -35,7 +35,8 @@ class _StudentFormPageState extends State<StudentFormPage> {
   /// existing student never crashes on a value the dropdown doesn't know.
   List<String> get _classOptions => [
     ...StudentClasses.all,
-    if (_className != null && !StudentClasses.all.contains(_className)) _className!,
+    if (_className != null && !StudentClasses.all.contains(_className))
+      _className!,
   ];
 
   @override
@@ -78,7 +79,12 @@ class _StudentFormPageState extends State<StudentFormPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? l10n.editStudentTitle : l10n.addStudentButton)),
+      appBar: AppBar(
+        title: Text(
+          _isEdit ? l10n.editStudentTitle : l10n.addStudentButton,
+          style: const TextStyle(fontSize: 17),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
@@ -90,7 +96,9 @@ class _StudentFormPageState extends State<StudentFormPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Text(
-                    l10n.idLabel(_existing?.studentId ?? widget.existingId ?? ''),
+                    l10n.idLabel(
+                      _existing?.studentId ?? widget.existingId ?? '',
+                    ),
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ),
@@ -121,7 +129,9 @@ class _StudentFormPageState extends State<StudentFormPage> {
               BlocBuilder<StudentsCubit, StudentsState>(
                 buildWhen: (a, b) => a.isMutating != b.isMutating,
                 builder: (context, state) => PrimaryButton(
-                  label: _isEdit ? l10n.saveChangesButton : l10n.createStudentButton,
+                  label: _isEdit
+                      ? l10n.saveChangesButton
+                      : l10n.createStudentButton,
                   isLoading: state.isMutating,
                   onPressed: _submit,
                 ),

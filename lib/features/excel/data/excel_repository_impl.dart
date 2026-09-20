@@ -105,6 +105,15 @@ class ExcelRepositoryImpl implements ExcelRepository {
     final bytes = _codec.buildAttendanceWorkbook(
       rows,
       dates: DateKey.rangeInclusive(from, to),
+      roster: [
+        for (final e in names.entries)
+          AttendanceExportPerson(
+            personId: e.key,
+            name: e.value,
+            personType: personType,
+          ),
+      ],
+      now: DateTime.now(),
     );
     final stamp = DateFormat('yyyyMMdd').format(from);
     final stamp2 = DateFormat('yyyyMMdd').format(to);

@@ -7,12 +7,20 @@ import '../../../core/enums/person_type.dart';
 import '../../../core/enums/worker_job_title.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../domain/attendance_absence_rule.dart';
 import '../domain/excel_rows.dart';
 import '../domain/repositories/excel_repository.dart';
 
 /// Pure Excel (de)serialisation. No Firebase, no IO — just bytes ⇄ rows.
 class ExcelCodec {
-  static final _time = DateFormat('HH:mm');
+  /// Shown in both Check-in and Check-out once the check-in window closed.
+  static const absentMarker = 'غياب ❌';
+
+  /// 12-hour clock; the Arabic (ar-SA) locale tag makes Excel render AM/PM as
+  /// ص/م, e.g. 16:00 → 4:00 م.
+  static final _timeStyle = CellStyle(
+    numberFormat: const CustomTimeNumFormat(formatCode: r'[$-401]h:mm AM/PM'),
+  );
 
   static const _staticHeaders = [
     'Name',
@@ -34,10 +42,19 @@ class ExcelCodec {
   /// [dates] (`yyyy-MM-dd`, sorted) is every day of the requested range —
   /// not just the ones with a record — so a day nobody was recorded on still
   /// gets its own (blank) column pair.
+  ///
+  /// [roster] lists registered people who must appear even with no record in
+  /// the range. [now] and [absenceRule] decide which empty check-ins are
+  /// reported as absent (see [AttendanceAbsenceRule]); the result only affects
+  /// the file, never stored data.
   Uint8List buildAttendanceWorkbook(
     List<AttendanceExportRow> rows, {
     required List<String> dates,
+    List<AttendanceExportPerson> roster = const [],
+    DateTime? now,
+    AttendanceAbsenceRule absenceRule = AttendanceAbsenceRule.standard,
   }) {
+    final clock = now ?? DateTime.now();
     final book = Excel.createExcel();
     final sheet = book['Attendance'];
     book.setDefaultSheet('Attendance');
@@ -47,7 +64,8 @@ class ExcelCodec {
     for (final r in rows) {
       (byPerson[r.personId] ??= []).add(r);
     }
-    final personIds = byPerson.keys.toList()..sort();
+    final rosterById = {for (final p in roster) p.personId: p};
+    final personIds = {...byPerson.keys, ...rosterById.keys}.toList()..sort();
 
     for (var c = 0; c < _staticHeaders.length; c++) {
       final top = CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0);
@@ -81,10 +99,15 @@ class ExcelCodec {
 
     var rowIndex = 2;
     for (final personId in personIds) {
-      final personRows = byPerson[personId]!
+      final personRows = (byPerson[personId] ?? <AttendanceExportRow>[])
         ..sort((a, b) => a.date.compareTo(b.date));
       final byDate = {for (final r in personRows) r.date: r};
-      final first = personRows.first;
+      final name = personRows.isNotEmpty
+          ? personRows.first.name
+          : rosterById[personId]!.name;
+      final personType = personRows.isNotEmpty
+          ? personRows.first.personType
+          : rosterById[personId]!.personType;
 
       var recordedBy = '';
       for (final r in personRows) {
@@ -93,7 +116,7 @@ class ExcelCodec {
 
       sheet.updateCell(
         CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
-        TextCellValue(first.name),
+        TextCellValue(name),
       );
       sheet.updateCell(
         CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
@@ -101,7 +124,7 @@ class ExcelCodec {
       );
       sheet.updateCell(
         CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex),
-        TextCellValue(first.personType.value),
+        TextCellValue(personType.value),
       );
       sheet.updateCell(
         CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex),
@@ -111,21 +134,24 @@ class ExcelCodec {
       for (var i = 0; i < dates.length; i++) {
         final col = _staticHeaders.length + i * 2;
         final record = byDate[dates[i]];
-        sheet.updateCell(
-          CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rowIndex),
-          TextCellValue(
-            record?.checkIn == null
-                ? ''
-                : _time.format(record!.checkIn!.toLocal()),
-          ),
+        final absent = absenceRule.isAbsent(
+          dateKey: dates[i],
+          checkIn: record?.checkIn,
+          now: clock,
         );
-        sheet.updateCell(
-          CellIndex.indexByColumnRow(columnIndex: col + 1, rowIndex: rowIndex),
-          TextCellValue(
-            record?.checkOut == null
-                ? ''
-                : _time.format(record!.checkOut!.toLocal()),
-          ),
+        _writeTimeCell(
+          sheet,
+          col,
+          rowIndex,
+          absent ? null : record?.checkIn,
+          absent: absent,
+        );
+        _writeTimeCell(
+          sheet,
+          col + 1,
+          rowIndex,
+          absent ? null : record?.checkOut,
+          absent: absent,
         );
       }
       rowIndex++;
@@ -139,6 +165,30 @@ class ExcelCodec {
       throw UnknownException(message: appStrings.excelCouldNotBuildWorkbook);
     }
     return Uint8List.fromList(bytes);
+  }
+
+  /// Writes an attendance time as a real Excel time value (12-hour, Arabic
+  /// ص/م), the absence marker as text, or leaves the cell empty.
+  void _writeTimeCell(
+    Sheet sheet,
+    int col,
+    int row,
+    DateTime? time, {
+    required bool absent,
+  }) {
+    final index = CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row);
+    if (absent) {
+      sheet.updateCell(index, TextCellValue(absentMarker));
+    } else if (time != null) {
+      final t = time.toLocal();
+      sheet.updateCell(
+        index,
+        TimeCellValue(hour: t.hour, minute: t.minute),
+        cellStyle: _timeStyle,
+      );
+    } else {
+      sheet.updateCell(index, TextCellValue(''));
+    }
   }
 
   /// Reads the first sheet as a list of `header → value` maps (lower-cased,

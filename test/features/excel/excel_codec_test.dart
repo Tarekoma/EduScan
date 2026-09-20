@@ -49,6 +49,7 @@ void main() {
         // still get its own (blank) column pair, not just the dates that
         // happen to appear in `rows`.
         dates: const ['2026-09-10', '2026-09-11', '2026-09-12'],
+        now: DateTime(2026, 9, 12, 10), // 09-12 still open: not absent
       );
       final book = Excel.decodeBytes(bytes);
       final sheet = book.tables['Attendance']!;
@@ -73,14 +74,77 @@ void main() {
       expect(cell(0, 2), 'Ahmed');
       expect(cell(1, 2), 'STU_00001');
       expect(cell(3, 2), 'Sam');
-      expect(cell(4, 2), '07:42');
+      expect(cell(4, 2), '07:42:00');
       expect(cell(5, 2), ''); // no checkout on 09-10
-      expect(cell(6, 2), '07:50');
-      expect(cell(7, 2), '14:05');
+      expect(cell(6, 2), '07:50:00');
+      expect(cell(7, 2), '14:05:00');
       expect(cell(8, 2), ''); // no record at all on 09-12
       expect(cell(9, 2), '');
     },
   );
+
+  test('absence: closed days without check-in are marked, open days are not', () {
+    AttendanceExportRow row(String date, DateTime? i, DateTime? o) =>
+        AttendanceExportRow(
+          date: date,
+          personId: 'STU_00001',
+          name: 'Ahmed',
+          personType: PersonType.student,
+          checkIn: i,
+          checkOut: o,
+          recordedBy: '',
+          recordedAt: i,
+        );
+    const roster = [
+      AttendanceExportPerson(
+        personId: 'STU_00002',
+        name: 'Omar',
+        personType: PersonType.student,
+      ),
+    ];
+    Data at(Uint8List b, int col, int r) => Excel.decodeBytes(b)
+        .tables['Attendance']!
+        .cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: r));
+    String v(Uint8List b, int col, int r) =>
+        at(b, col, r).value?.toString() ?? '';
+
+    final dates = ['2026-09-10', '2026-09-11', '2026-09-12'];
+    final rows = [
+      // 09-10: checked in, never checked out -> keep in, out stays empty.
+      row('2026-09-10', DateTime(2026, 9, 10, 8), null),
+      // 09-11: no check-in at all -> absent once closed.
+      // 09-12: no record, "now" is before 18:00 -> not absent yet.
+    ];
+    final before = codec.buildAttendanceWorkbook(
+      rows,
+      dates: dates,
+      roster: roster,
+      now: DateTime(2026, 9, 12, 17, 59),
+    );
+    expect(v(before, 4, 2), '08:00:00');
+    expect(v(before, 5, 2), ''); // in but no out: not absent
+    expect(v(before, 6, 2), ExcelCodec.absentMarker);
+    expect(v(before, 7, 2), ExcelCodec.absentMarker);
+    expect(v(before, 8, 2), ''); // 17:59 -> still open
+    expect(v(before, 9, 2), '');
+    // Roster-only person (no records) is listed and absent on closed days.
+    expect(v(before, 0, 3), 'Omar');
+    expect(v(before, 4, 3), ExcelCodec.absentMarker);
+    expect(v(before, 8, 3), '');
+
+    final after = codec.buildAttendanceWorkbook(
+      rows,
+      dates: dates,
+      roster: roster,
+      now: DateTime(2026, 9, 12, 18),
+    );
+    expect(v(after, 8, 2), ExcelCodec.absentMarker);
+    expect(v(after, 9, 2), ExcelCodec.absentMarker);
+    expect(v(after, 5, 2), ''); // still not absent
+
+    // Time cells are real Excel time values, not text.
+    expect(at(after, 4, 2).value, isA<TimeCellValue>());
+  });
 
   test('parseStudents reads headers case-insensitively and reports skips', () {
     final bytes = _sheet([

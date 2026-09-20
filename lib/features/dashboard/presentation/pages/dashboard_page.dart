@@ -8,10 +8,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/utils/time_format.dart';
 import '../../../../core/widgets/app_state_views.dart';
-import '../../../../core/widgets/locale_toggle_button.dart';
 import '../../../../core/widgets/page_header.dart';
-import '../../../../core/widgets/sign_out_button.dart';
-import '../../../../core/widgets/theme_toggle_button.dart';
+import '../../../../core/widgets/account_button.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../attendance/presentation/attendance_status_display.dart';
@@ -83,11 +81,7 @@ class _Content extends StatelessWidget {
           ? AppBar(
               toolbarHeight: 76,
               title: header,
-              actions: const [
-                ThemeToggleButton(),
-                LocaleToggleButton(),
-                SignOutButton(),
-              ],
+              actions: const [AccountButton()],
             )
           : null,
       body: ListView(

@@ -24,6 +24,20 @@ class AttendanceExportRow {
   final DateTime? recordedAt;
 }
 
+/// A registered person included in an attendance export even when they have
+/// no record in the range (so an absence can be reported for them).
+class AttendanceExportPerson {
+  const AttendanceExportPerson({
+    required this.personId,
+    required this.name,
+    required this.personType,
+  });
+
+  final String personId;
+  final String name;
+  final PersonType personType;
+}
+
 /// A parsed student row awaiting import.
 class StudentImportRow {
   const StudentImportRow({required this.fullName, required this.className});

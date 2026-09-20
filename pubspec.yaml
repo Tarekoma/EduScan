@@ -47,6 +47,10 @@ dependencies:
   share_plus: ^10.1.2
   path_provider: ^2.1.5
 
+  # PDF generation, preview and printing
+  pdf: ^3.11.1
+  printing: ^5.13.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -62,15 +66,16 @@ flutter:
   assets:
     - assets/sounds/
     - assets/images/
+    - assets/fonts/
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/EduScan_app_logo.png"
+  image_path: "assets/images/madrasty_logo2.jpeg"
   min_sdk_android: 21
   web:
     generate: true
-    image_path: "assets/images/EduScan_app_logo.png"
+    image_path: "assets/images/madrasty_logo2.jpeg"
   windows:
     generate: true
-    image_path: "assets/images/EduScan_app_logo.png"
+    image_path: "assets/images/madrasty_logo2.jpeg"

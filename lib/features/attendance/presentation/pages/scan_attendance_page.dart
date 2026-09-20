@@ -56,7 +56,10 @@ class _ScanViewState extends State<_ScanView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.scanQrTitle),
+        title: Text(
+          AppLocalizations.of(context)!.scanQrTitle,
+          style: const TextStyle(fontSize: 20),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),

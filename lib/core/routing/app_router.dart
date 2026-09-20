@@ -299,10 +299,8 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: AppRoutes.supervisorUsers,
-                  builder: (_, __) => const UsersPage(
-                    canDelete: false,
-                    showSupervisors: false,
-                  ),
+                  builder: (_, __) =>
+                      const UsersPage(canDelete: false, showSupervisors: false),
                 ),
               ],
             ),

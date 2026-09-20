@@ -14,6 +14,7 @@ class AppTextField extends StatelessWidget {
     this.textInputAction,
     this.onFieldSubmitted,
     this.enabled = true,
+    this.autofillHints,
   });
 
   final String label;
@@ -27,6 +28,9 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onFieldSubmitted;
   final bool enabled;
 
+  /// Tells the OS password manager what this field holds (see [AutofillHints]).
+  final Iterable<String>? autofillHints;
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -37,6 +41,7 @@ class AppTextField extends StatelessWidget {
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
       enabled: enabled,
+      autofillHints: autofillHints,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       decoration: InputDecoration(
         labelText: label,

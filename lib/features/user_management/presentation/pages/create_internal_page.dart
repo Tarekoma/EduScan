@@ -51,7 +51,12 @@ class _CreateInternalPageState extends State<CreateInternalPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.newRoleAccountTitle(widget.role.label(context)))),
+      appBar: AppBar(
+        title: Text(
+          l10n.newRoleAccountTitle(widget.role.label(context)),
+          style: const TextStyle(fontSize: 17),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
