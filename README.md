@@ -18,7 +18,7 @@ The application provides dedicated interfaces for **Managers, Supervisors, Secur
 
 The system uses **QR Code scanning** as the primary method for recording attendance.
 
-> 🎬 **Application Demo:** **[Watch Video Here](YOUR_DEMO_LINK_HERE)**
+> 🎬 **Application Demo:** **[Watch Video Here](https://1drv.ms/v/c/47438efdb3ee2559/IQBfEJQWpmMqQZ7obSjuo3QMARQ1iACrELRtFV0sYVLuVa4?e=bMKzg2)**
 
 > 📱 **Platform:** Flutter Web / Mobile
 
@@ -32,13 +32,13 @@ The system uses **QR Code scanning** as the primary method for recording attenda
 
 | Manager Dashboard                                                | Security                                                | Parent                                                |
 | ---------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- |
-| <img width="250" alt="Manager Dashboard" src="YOUR_IMAGE_URL" /> | <img width="250" alt="Security" src="YOUR_IMAGE_URL" /> | <img width="250" alt="Parent" src="YOUR_IMAGE_URL" /> |
+|<img width="250" height="500" alt="image" src="https://github.com/user-attachments/assets/4df1dd26-f4a3-4418-b001-180de69f1140"/>|<img width="250" height="500" alt="image" src="https://github.com/user-attachments/assets/b0e43d9e-e423-4b1e-a8d0-697b6b331efd"/>|<img width="250" height="500" alt="image" src="https://github.com/user-attachments/assets/ce88be3b-5c34-4544-96df-dc40b4435a00"/>|
 
 <br>
 
-| Attendance                                                | QR Scanner                                                | Attendance History                                                |
+| Students                                                  | Users                                                     | Attendance History                                                |
 | --------------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------- |
-| <img width="250" alt="Attendance" src="YOUR_IMAGE_URL" /> | <img width="250" alt="QR Scanner" src="YOUR_IMAGE_URL" /> | <img width="250" alt="Attendance History" src="YOUR_IMAGE_URL" /> |
+|<img width="250" height="500" alt="image" src="https://github.com/user-attachments/assets/7094d636-c038-40f6-8c60-3d5e45b008f5"/>|<img width="250" height="500" alt="image" src="https://github.com/user-attachments/assets/a22f56b1-f6b6-4bbf-aea8-df1ab107a34a"/>|<img width="250" height="500" alt="image" src="https://github.com/user-attachments/assets/d83dca9d-c648-4d1e-88dd-b1921c9570e9"/>|
 
 </div>
 
