@@ -14,4 +14,7 @@ abstract interface class AuthRepository {
   Future<AppUser> signIn({required String email, required String password});
 
   Future<void> signOut();
+
+  /// Updates the signed-in user's own display name.
+  Future<void> updateName({required String uid, required String name});
 }

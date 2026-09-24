@@ -334,5 +334,8 @@
   "cardTypeWorker": "موظف",
   "printQrPreparing": "جارٍ تجهيز {count, plural, one{بطاقة واحدة} other{{count} بطاقات}}…",
   "@printQrPreparing": {"placeholders": {"count": {"type": "int"}}},
-  "accountMenuTooltip": "الحساب"
+  "accountMenuTooltip": "الحساب",
+  "accountEditName": "تعديل الاسم",
+  "accountEditNameTitle": "تحديث اسمك",
+  "accountNameUpdated": "تم تحديث الاسم."
 }

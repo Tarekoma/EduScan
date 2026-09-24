@@ -7,6 +7,7 @@ import '../../../../core/errors/error_mapper.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/usecases/sign_in.dart';
 import '../../domain/usecases/sign_out.dart';
+import '../../domain/usecases/update_name.dart';
 import '../../domain/usecases/watch_auth_state.dart';
 
 part 'auth_state.dart';
@@ -17,9 +18,11 @@ class AuthCubit extends Cubit<AuthState> {
     required WatchAuthState watchAuthState,
     required SignIn signIn,
     required SignOut signOut,
+    required UpdateName updateName,
   }) : _watchAuthState = watchAuthState,
        _signIn = signIn,
        _signOut = signOut,
+       _updateName = updateName,
        super(const AuthState()) {
     _subscription = _watchAuthState().listen(
       _onUserChanged,
@@ -30,6 +33,7 @@ class AuthCubit extends Cubit<AuthState> {
   final WatchAuthState _watchAuthState;
   final SignIn _signIn;
   final SignOut _signOut;
+  final UpdateName _updateName;
   late final StreamSubscription<AppUser?> _subscription;
 
   void _onUserChanged(AppUser? user) {
@@ -67,6 +71,18 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signOut() => _signOut();
+
+  /// Updates the signed-in user's own display name. Optimistically updates
+  /// local state on success — the auth stream only reacts to Firebase Auth
+  /// changes, not Firestore document writes, so it would not otherwise pick
+  /// this up until the next sign-in. Throws [AppException] on failure so the
+  /// caller can surface it (e.g. in a dialog); state is left untouched then.
+  Future<void> updateName(String name) async {
+    final user = state.user;
+    if (user == null) return;
+    await _updateName(uid: user.uid, name: name);
+    emit(state.copyWith(user: user.copyWith(name: name.trim())));
+  }
 
   @override
   Future<void> close() {

@@ -82,4 +82,5 @@ abstract final class UserFields {
   static const String studentIds = 'studentIds';
   static const String createdAt = 'createdAt';
   static const String createdBy = 'createdBy';
+  static const String updatedAt = 'updatedAt';
 }

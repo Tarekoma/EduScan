@@ -68,4 +68,17 @@ class AuthRemoteDataSource {
   }
 
   Future<void> signOut() => _auth.signOut();
+
+  /// Updates the signed-in user's own display name in their `users/{uid}`
+  /// profile. Firestore rules restrict this to the caller's own document.
+  Future<void> updateName({required String uid, required String name}) async {
+    try {
+      await _userRef(uid).update({
+        UserFields.name: name,
+        UserFields.updatedAt: FieldValue.serverTimestamp(),
+      });
+    } catch (e, s) {
+      throw ErrorMapper.map(e, s);
+    }
+  }
 }

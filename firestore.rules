@@ -90,7 +90,13 @@ service cloud.firestore {
       allow update: if (hasRole('manager')
           || (hasRole('supervisor')
               && resource.data.role in ['security', 'parent']))
-        && unchanged(['uid', 'email', 'role', 'createdAt', 'createdBy']);
+        && unchanged(['uid', 'email', 'role', 'createdAt', 'createdBy'])
+        // Any signed-in, active user may rename themselves — everything else
+        // on their own profile stays locked.
+        || (isSignedIn() && isActive() && request.auth.uid == uid
+            && isNonEmptyString(request.resource.data.name)
+            && unchanged(['uid', 'email', 'role', 'isActive', 'studentIds',
+                          'phone', 'createdAt', 'createdBy']));
 
       // Only the manager may delete accounts.
       allow delete: if hasRole('manager');

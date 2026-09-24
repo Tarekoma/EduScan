@@ -11,6 +11,7 @@ import '../theme/theme_cubit.dart';
 import '../utils/responsive.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../l10n/app_localizations.dart';
+import 'edit_name_dialog.dart';
 
 class ShellDestination {
   const ShellDestination({
@@ -364,6 +365,11 @@ class _UserFooter extends StatelessWidget {
           avatar,
           const SizedBox(height: AppSpacing.xs),
           IconButton(
+            tooltip: l10n.accountEditName,
+            icon: const Icon(Icons.edit_outlined, color: AppColors.sidebarForegroundMuted, size: 18),
+            onPressed: () => showEditNameDialog(context),
+          ),
+          IconButton(
             tooltip: l10n.commonSignOut,
             icon: const Icon(Icons.logout, color: AppColors.sidebarForegroundMuted, size: 20),
             onPressed: () => context.read<AuthCubit>().signOut(),
@@ -392,6 +398,11 @@ class _UserFooter extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        IconButton(
+          tooltip: l10n.accountEditName,
+          icon: const Icon(Icons.edit_outlined, color: AppColors.sidebarForegroundMuted, size: 18),
+          onPressed: () => showEditNameDialog(context),
         ),
         IconButton(
           tooltip: l10n.commonSignOut,

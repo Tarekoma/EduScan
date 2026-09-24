@@ -8,6 +8,7 @@ import 'package:attendance_management/features/attendance/domain/usecases/attend
 import 'package:attendance_management/features/auth/domain/entities/app_user.dart';
 import 'package:attendance_management/features/auth/domain/usecases/sign_in.dart';
 import 'package:attendance_management/features/auth/domain/usecases/sign_out.dart';
+import 'package:attendance_management/features/auth/domain/usecases/update_name.dart';
 import 'package:attendance_management/features/auth/domain/usecases/watch_auth_state.dart';
 import 'package:attendance_management/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:attendance_management/features/parent/domain/usecases/get_linked_children.dart';
@@ -23,6 +24,8 @@ class _MockWatchAuth extends Mock implements WatchAuthState {}
 class _MockSignIn extends Mock implements SignIn {}
 
 class _MockSignOut extends Mock implements SignOut {}
+
+class _MockUpdateName extends Mock implements UpdateName {}
 
 class _StudentRepo implements StudentRepository {
   @override
@@ -80,6 +83,7 @@ void main() {
       watchAuthState: watchAuth,
       signIn: _MockSignIn(),
       signOut: _MockSignOut(),
+      updateName: _MockUpdateName(),
     );
     attendance = _AttendanceRepo();
   });

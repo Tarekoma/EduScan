@@ -35,6 +35,23 @@ class PlatformFileService implements FileService {
 
   @override
   Future<void> shareBytes(Uint8List bytes, String filename) async {
+    // share_plus has no real share target on desktop, so let the user pick a
+    // save location there instead of silently sending just the filename.
+    if (!kIsWeb &&
+        (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      final extension = filename.contains('.') ? filename.split('.').last : null;
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: filename,
+        fileName: filename,
+        type: extension == null ? FileType.any : FileType.custom,
+        allowedExtensions: extension == null ? null : [extension],
+        bytes: bytes,
+      );
+      if (path != null) {
+        await File(path).writeAsBytes(bytes, flush: true);
+      }
+      return;
+    }
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$filename');
     await file.writeAsBytes(bytes, flush: true);

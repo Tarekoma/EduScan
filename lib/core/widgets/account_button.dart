@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../theme/theme_cubit.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../l10n/app_localizations.dart';
+import 'edit_name_dialog.dart';
 
 /// Avatar button for page headers on mobile, where there is no sidebar. Opens
 /// a sheet with the signed-in user's name and role, the language and theme
@@ -33,12 +34,12 @@ class AccountButton extends StatelessWidget {
     );
   }
 
-  void _open(BuildContext context) {
+  Future<void> _open(BuildContext context) async {
     // The sheet lives in its own route, so hand it the cubits explicitly.
     final auth = context.read<AuthCubit>();
     final theme = context.read<ThemeCubit>();
     final locale = context.read<LocaleCubit>();
-    showModalBottomSheet<void>(
+    final action = await showModalBottomSheet<_AccountAction>(
       context: context,
       showDragHandle: true,
       builder: (_) => MultiBlocProvider(
@@ -50,8 +51,15 @@ class AccountButton extends StatelessWidget {
         child: const _AccountSheet(),
       ),
     );
+    // Wait for the sheet's closing animation before opening the dialog on
+    // this (still-mounted) outer context.
+    if (action == _AccountAction.editName && context.mounted) {
+      await showEditNameDialog(context);
+    }
   }
 }
+
+enum _AccountAction { editName }
 
 class _AccountSheet extends StatelessWidget {
   const _AccountSheet();
@@ -89,6 +97,12 @@ class _AccountSheet extends StatelessWidget {
                 ),
               ),
               subtitle: Text(user.role.label(context)),
+              trailing: IconButton(
+                tooltip: l10n.accountEditName,
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () =>
+                    Navigator.of(context).pop(_AccountAction.editName),
+              ),
             ),
           const Divider(height: 1),
           ListTile(

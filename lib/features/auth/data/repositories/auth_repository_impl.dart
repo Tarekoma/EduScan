@@ -33,4 +33,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signOut() => _remote.signOut();
+
+  @override
+  Future<void> updateName({required String uid, required String name}) {
+    return _remote.updateName(uid: uid, name: name);
+  }
 }

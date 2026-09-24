@@ -5,6 +5,7 @@ import 'package:attendance_management/core/enums/user_role.dart';
 import 'package:attendance_management/features/auth/domain/entities/app_user.dart';
 import 'package:attendance_management/features/auth/domain/usecases/sign_in.dart';
 import 'package:attendance_management/features/auth/domain/usecases/sign_out.dart';
+import 'package:attendance_management/features/auth/domain/usecases/update_name.dart';
 import 'package:attendance_management/features/auth/domain/usecases/watch_auth_state.dart';
 import 'package:attendance_management/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:attendance_management/features/pickup/data/pickup_alert_player.dart';
@@ -57,6 +58,7 @@ void main() {
       watchAuthState: watchAuth,
       signIn: _MockSignInStub(),
       signOut: _MockSignOutStub(),
+      updateName: _MockUpdateNameStub(),
     );
     repo = _FakePickupRepo();
     player = _CountingPlayer();
@@ -161,6 +163,11 @@ class _MockSignInStub implements SignIn {
 }
 
 class _MockSignOutStub implements SignOut {
+  @override
+  noSuchMethod(Invocation i) => super.noSuchMethod(i);
+}
+
+class _MockUpdateNameStub implements UpdateName {
   @override
   noSuchMethod(Invocation i) => super.noSuchMethod(i);
 }

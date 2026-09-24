@@ -383,5 +383,8 @@
   "cardTypeWorker": "STAFF",
   "printQrPreparing": "Preparing {count, plural, one{1 card} other{{count} cards}}…",
   "@printQrPreparing": {"placeholders": {"count": {"type": "int"}}},
-  "accountMenuTooltip": "Account"
+  "accountMenuTooltip": "Account",
+  "accountEditName": "Edit name",
+  "accountEditNameTitle": "Update your name",
+  "accountNameUpdated": "Name updated."
 }

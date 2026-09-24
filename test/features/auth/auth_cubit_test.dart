@@ -5,6 +5,7 @@ import 'package:attendance_management/core/errors/app_exception.dart';
 import 'package:attendance_management/features/auth/domain/entities/app_user.dart';
 import 'package:attendance_management/features/auth/domain/usecases/sign_in.dart';
 import 'package:attendance_management/features/auth/domain/usecases/sign_out.dart';
+import 'package:attendance_management/features/auth/domain/usecases/update_name.dart';
 import 'package:attendance_management/features/auth/domain/usecases/watch_auth_state.dart';
 import 'package:attendance_management/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -14,6 +15,8 @@ import 'package:mocktail/mocktail.dart';
 class _MockSignIn extends Mock implements SignIn {}
 
 class _MockSignOut extends Mock implements SignOut {}
+
+class _MockUpdateName extends Mock implements UpdateName {}
 
 class _MockWatchAuthState extends Mock implements WatchAuthState {}
 
@@ -28,12 +31,14 @@ const _user = AppUser(
 void main() {
   late _MockSignIn signIn;
   late _MockSignOut signOut;
+  late _MockUpdateName updateName;
   late _MockWatchAuthState watchAuthState;
   late StreamController<AppUser?> stream;
 
   setUp(() {
     signIn = _MockSignIn();
     signOut = _MockSignOut();
+    updateName = _MockUpdateName();
     watchAuthState = _MockWatchAuthState();
     stream = StreamController<AppUser?>.broadcast();
     when(watchAuthState.call).thenAnswer((_) => stream.stream);
@@ -45,6 +50,7 @@ void main() {
     watchAuthState: watchAuthState,
     signIn: signIn,
     signOut: signOut,
+    updateName: updateName,
   );
 
   blocTest<AuthCubit, AuthState>(

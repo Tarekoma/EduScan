@@ -36,6 +36,20 @@ class AppUser extends Equatable {
 
   bool isLinkedToStudent(String studentId) => studentIds.contains(studentId);
 
+  AppUser copyWith({String? name}) {
+    return AppUser(
+      uid: uid,
+      name: name ?? this.name,
+      email: email,
+      role: role,
+      isActive: isActive,
+      phone: phone,
+      studentIds: studentIds,
+      createdAt: createdAt,
+      createdBy: createdBy,
+    );
+  }
+
   @override
   List<Object?> get props => [
     uid,
